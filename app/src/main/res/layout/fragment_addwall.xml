@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.addWall.AddWallFragment">
+
+    <LinearLayout
+        android:id="@+id/homeAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:transitionName="topAppBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Add Wall"
+            android:textColor="@android:color/primary_text_dark"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomAppBar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:transitionName="bottomAppBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/homeAppBar">
+
+        <Button
+            android:id="@+id/addHolds"
+            style="@style/Widget.AppCompat.Button.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_gesture_black_24dp"
+            android:drawableTint="@color/colorAccent"
+            android:text="Add Holds"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/removeHolds"
+            style="@style/Widget.AppCompat.Button.Small"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_clear_black_24dp"
+            android:drawableTint="@color/colorAccent"
+            android:text="Remove Holds"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="10sp" />
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/changeImage"
+            style="@style/Widget.AppCompat.Button.Small"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="5dp"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_menu_gallery"
+            android:drawableTint="@color/colorAccent"
+            android:text="Change Image"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/saveWallButton"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save Wall"
+            android:textAllCaps="false"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/containerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:foregroundGravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bottomAppBar">
+
+        <com.example.myroutes.ui.addWall.MyFrameLayout
+            android:id="@+id/frameLayout2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.ortiz.touchview.TouchImageView
+                android:id="@+id/imageView4"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitStart" />
+
+        </com.example.myroutes.ui.addWall.MyFrameLayout>
+
+        <TextView
+            android:id="@+id/helperMessage"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="5dp"
+            android:layout_weight="1"
+            android:gravity="center_horizontal|top"
+            android:minHeight="30dp"
+            android:orientation="horizontal"
+            android:text="Add and delete holds using the toolbar.">
+
+        </TextView>
+    </LinearLayout>
+
+
+
+    <LinearLayout
+        android:id="@+id/loadingLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:orientation="vertical"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bottomAppBar">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Finding Holds...">
+
+        </TextView>
+
+        <ProgressBar
+            android:id="@+id/progressBar_cyclic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:minWidth="50dp"
+            android:minHeight="50dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

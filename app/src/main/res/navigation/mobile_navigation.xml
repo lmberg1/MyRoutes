@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_home">
+
+    <fragment android:id="@+id/nav_home"
+        android:name="com.example.myroutes.ui.home.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_manage_walls"
+        android:name="com.example.myroutes.ui.manageWalls.ManageWallsFragment"
+        android:label="Manage Walls"
+        tools:layout="@layout/fragment_manage_walls" />
+
+    <fragment
+        android:id="@+id/nav_addWall"
+        android:name="com.example.myroutes.ui.addWall.AddWallFragment"
+        android:label="Add Wall"
+        tools:layout="@layout/fragment_addwall" />
+
+    <fragment
+        android:id="@+id/nav_addBoulder"
+        android:name="com.example.myroutes.ui.addBoulder.AddBoulderFragment"
+        android:label="Add Boulder"
+        tools:layout="@layout/fragment_add_boulder" />
+
+</navigation>

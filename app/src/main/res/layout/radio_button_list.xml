@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RadioGroup android:id="@+id/gradeButtonGroup"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RadioButton
+        android:id="@+id/gradeButton1"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V0"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton2"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V1"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton3"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V2"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton4"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V3"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton5"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V4"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton6"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V5"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton7"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V6"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton8"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V7"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton9"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V8"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton10"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V9"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+    <RadioButton
+        android:id="@+id/gradeButton11"
+        android:layout_width="40dp"
+        android:layout_height="30dp"
+        android:background="@drawable/gradebutton_style"
+        android:button="@android:color/transparent"
+        android:text="V10"
+        android:textAlignment="center"
+        android:visibility="invisible" />
+
+</RadioGroup>
