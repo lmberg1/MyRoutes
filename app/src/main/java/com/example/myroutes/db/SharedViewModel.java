@@ -14,6 +14,7 @@ import com.example.myroutes.db.backends.FileService;
 import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.db.mongoClasses.WallDataItem;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
+import com.example.myroutes.db.mongoClasses.WorkoutItem;
 import com.example.myroutes.util.PreferenceManager;
 import com.example.myroutes.util.WallMetadata;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;
@@ -85,7 +86,7 @@ public class SharedViewModel extends AndroidViewModel {
         assert imageItem != null;
 
         // Immediately add data to cache
-        addWallToCache(dataItem, imageItem, new ArrayList<>());
+        addWallToCache(dataItem, imageItem, null, null);
 
         MediatorLiveData<Status> mediator = new MediatorLiveData<>();
         LiveData<Result<RemoteInsertOneResult>> addData = wallDataRepository.insertWallData(dataItem);
@@ -113,9 +114,10 @@ public class SharedViewModel extends AndroidViewModel {
         LiveData<Result<WallDataItem>> data = wallDataRepository.getWallData(wall_id);
         LiveData<Result<WallImageItem>> image = wallDataRepository.getImageData(wall_id);
         LiveData<Result<List<BoulderItem>>> boulders = wallDataRepository.getBoulders(wall_id);
+        LiveData<Result<List<WorkoutItem>>> workouts = wallDataRepository.getWorkouts(wall_id);
 
         // Wait until data, image, and boulders results have loaded
-        waitForAll(data, image, boulders)
+        waitForAll(data, image, boulders, workouts)
                 .observeForever(o -> {
                     // Check if data is still loading
                     if (o == Status.LOADING) {
@@ -134,6 +136,9 @@ public class SharedViewModel extends AndroidViewModel {
                             ((Result.Success<WallImageItem>) Objects.requireNonNull(image.getValue())).getResult(),
                             (boulders.getValue() instanceof Result.Success) ?
                                     ((Result.Success<List<BoulderItem>>) Objects.requireNonNull(boulders.getValue())).getResult() :
+                                    new ArrayList<>(),
+                            (workouts.getValue() instanceof Result.Success) ?
+                                    ((Result.Success<List<WorkoutItem>>) Objects.requireNonNull(workouts.getValue())).getResult() :
                                     new ArrayList<>()
                     );
                     mediator.setValue(Status.SUCCESS);
@@ -148,7 +153,6 @@ public class SharedViewModel extends AndroidViewModel {
         currentWallStatus.setValue(Status.LOADING);
 
         // Check if wall is already loaded
-        //MutableLiveData<Status> status = new MutableLiveData<>();
         if (loadedWalls.containsKey(wall_id)) {
             currentWallId = wall_id;
             currentWallStatus.setValue(Status.SUCCESS);
@@ -177,11 +181,12 @@ public class SharedViewModel extends AndroidViewModel {
         // Delete wall from database
         LiveData<Result<RemoteDeleteResult>> data = wallDataRepository.deleteWallData(wall_id);
         LiveData<Result<RemoteDeleteResult>> image = wallDataRepository.deleteImageData(wall_id);
-        LiveData<Result<RemoteDeleteResult>> boulders = wallDataRepository.deleteBoulders(wall_id);
+        LiveData<Result<RemoteDeleteResult>> boulders = wallDataRepository.deleteAllBoulders(wall_id);
+        LiveData<Result<RemoteDeleteResult>> workouts = wallDataRepository.deleteAllWorkouts(wall_id);
 
         MediatorLiveData<Status> mediator = new MediatorLiveData<>();
         // Wait until data, image, and boulders have all been deleted
-        waitForAll(data, image, boulders)
+        waitForAll(data, image, boulders, workouts)
                 .observeForever(o -> {
                     // Deletions are still in progress
                     if (o == Status.LOADING) {
@@ -234,8 +239,9 @@ public class SharedViewModel extends AndroidViewModel {
     }
 
     // Update variables and shared preferences
-    private void addWallToCache(WallDataItem data, WallImageItem image, List<BoulderItem> boulders) {
-        Wall wall = new Wall(data, image, orderByGrade(boulders));
+    private void addWallToCache(WallDataItem data, WallImageItem image,
+                                List<BoulderItem> boulders, List<WorkoutItem> workouts) {
+        Wall wall = new Wall(data, image, orderByGrade(boulders), workouts);
 
         // Update variables
         loadedWalls.putIfAbsent(wall.getId(), wall);
@@ -250,7 +256,7 @@ public class SharedViewModel extends AndroidViewModel {
         Preferences_addWall(data, role);
     }
 
-    public static HashMap<String, List<BoulderItem>> orderByGrade(List<BoulderItem> items) {
+    private static HashMap<String, List<BoulderItem>> orderByGrade(List<BoulderItem> items) {
         // Initialize hashmap
         HashMap<String, List<BoulderItem>> boulderMap = new HashMap<>();
 
@@ -268,30 +274,54 @@ public class SharedViewModel extends AndroidViewModel {
 
     /*------------------------------------HANDLE BOULDERS-----------------------------------------*/
 
-    public LiveData<Status> addBoulderItem(BoulderItem boulderItem) {
+    public void addBoulderItem(BoulderItem boulderItem) {
         assert boulderItem != null;
 
-        // Update boulders
-        /*String grade = boulderItem.getBoulder_grade();
-        Wall currentWall = loadedWalls.get(boulderItem.getWall_id());
-        assert currentWall != null;
-        List<BoulderItem> boulders = currentWall.boulders.getOrDefault(grade, new ArrayList<>());
-        assert boulders != null;
-        boulders.add(boulderItem);
-        currentWall.boulders.put(grade, boulders);*/
-        // Add boulder to wall variables
+        // Update walls
         Wall wall = loadedWalls.get(boulderItem.getWall_id());
         assert wall != null;
         wall.addBoulder(boulderItem);
-        loadedWalls.put(boulderItem.getWall_id(), wall);
+        //loadedWalls.put(boulderItem.getWall_id(), wall);
 
-        // Add boulder to database
+        // Update database
         wallDataRepository.insertBoulder(boulderItem);
+    }
 
-        final MutableLiveData<Status> result = new MutableLiveData<>();
-        result.setValue(Status.SUCCESS);
+    public void deleteBoulderItem(BoulderItem boulderItem) {
+        assert boulderItem != null;
 
-        return result;
+        // Update walls
+        Wall wall = loadedWalls.get(boulderItem.getWall_id());
+        assert wall != null;
+        wall.removeBoulder(boulderItem);
+       // loadedWalls.put(boulderItem.getWall_id(), wall);
+
+        // Update database
+        wallDataRepository.deleteBoulder(boulderItem.getWall_id(), boulderItem.getBoulder_id());
+    }
+
+    public void addWorkoutItem(WorkoutItem item) {
+        assert item != null;
+
+        // Update walls
+        Wall wall = loadedWalls.get(item.getWall_id());
+        assert wall != null;
+        wall.addWorkout(item);
+
+        // Update database
+        wallDataRepository.inserWorkout(item);
+    }
+
+    public void deleteWorkoutItem(WorkoutItem item) {
+        assert item != null;
+
+        // Update walls
+        Wall wall = loadedWalls.get(item.getWall_id());
+        assert wall != null;
+        wall.removeWorkout(item);
+
+        // Update database
+        wallDataRepository.deleteWorkout(item.getWall_id(), item.getWorkout_id());
     }
 
     /*---------------------------------HANDLE AUTHENTICATION--------------------------------------*/

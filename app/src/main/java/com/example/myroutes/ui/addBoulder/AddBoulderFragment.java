@@ -26,7 +26,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.fragment.NavHostFragment;
 
+import com.example.myroutes.ui.home.HomeFragment;
 import com.example.myroutes.util.AlertDialogManager;
 import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.R;
@@ -35,6 +37,7 @@ import com.example.myroutes.db.Wall;
 import com.example.myroutes.util.WallDrawingHelper;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class AddBoulderFragment extends Fragment {
     private static final String TAG = "AddBoulderFragment";
@@ -80,9 +83,11 @@ public class AddBoulderFragment extends Fragment {
 
         // Handle setting of current wall
         final ProgressBar progressBar = view.findViewById(R.id.progressBar_cyclic);
-        final TextView messageText = view.findViewById(R.id.messageText);
+        final TextView messageText = view.findViewById(R.id.error_message);
+        messageText.setVisibility(View.VISIBLE);
         model.getCurrentWallStatus().observe(getViewLifecycleOwner(), result -> {
             if (result == null) {
+                progressBar.setVisibility(View.GONE);
                 String message = "You have no walls. Go to the Manage Walls panel to add one.";
                 messageText.setText(message);
             }
@@ -100,6 +105,7 @@ public class AddBoulderFragment extends Fragment {
                 progressBar.setVisibility(View.VISIBLE);
             }
             else if (result == SharedViewModel.Status.SUCCESS) {
+                messageText.setVisibility(View.GONE);
                 progressBar.setVisibility(View.GONE);
                 this.wall_id = model.getCurrentWallId();
                 this.wall = model.getWall(wall_id);
@@ -113,6 +119,10 @@ public class AddBoulderFragment extends Fragment {
         // Set title
         TextView title = view.findViewById(R.id.title);
         title.setText(wall.getName());
+
+        // Handle back navigation
+        ImageView backButton = view.findViewById(R.id.backButton);
+        backButton.setOnClickListener(this::goToHomeFragment);
 
         // Handle buttons
         Button saveButton = view.findViewById(R.id.saveBoulder);
@@ -139,6 +149,11 @@ public class AddBoulderFragment extends Fragment {
                 setTransformation();
             }
         });
+    }
+
+    private void goToHomeFragment(View v) {
+        NavHostFragment.findNavController(AddBoulderFragment.this)
+                .navigate(R.id.nav_home);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -274,17 +289,14 @@ public class AddBoulderFragment extends Fragment {
             String grade = (String) spinner.getSelectedItem();
 
             // Create new boulder item
-            BoulderItem boulderItem = new BoulderItem(model.getStitchUserId(), wall_id,
+            String boulder_id = UUID.randomUUID().toString().substring(0, 8);
+            BoulderItem boulderItem = new BoulderItem(model.getStitchUserId(), wall_id, boulder_id,
                     boulderName, grade, fragmentModel.getHighlightedHolds());
 
             // Save the boulder item
-            model.addBoulderItem(boulderItem).observe(activity, result -> {
-                if (result == SharedViewModel.Status.SUCCESS) {
-                    Toast.makeText(activity.getApplicationContext(),
-                            "Added Boulder  " + boulderName,
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+            model.addBoulderItem(boulderItem);
+            Toast.makeText(activity.getApplicationContext(), "Added Boulder  " + boulderName,
+                    Toast.LENGTH_SHORT).show();
         });
     }
 }

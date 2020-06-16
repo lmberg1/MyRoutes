@@ -18,6 +18,18 @@
         tools:layout="@layout/fragment_manage_walls" />
 
     <fragment
+        android:id="@+id/nav_workouts"
+        android:name="com.example.myroutes.WorkoutFragment"
+        android:label="Manage Workouts"
+        tools:layout="@layout/fragment_workouts" />
+
+    <fragment
+        android:id="@+id/nav_start_workout"
+        android:name="com.example.myroutes.StartWorkoutFragment"
+        android:label="Start Workout"
+        tools:layout="@layout/fragment_start_workout" />
+
+    <fragment
         android:id="@+id/nav_addWall"
         android:name="com.example.myroutes.ui.addWall.AddWallFragment"
         android:label="Add Wall"

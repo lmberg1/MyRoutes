@@ -1,4 +1,4 @@
-package com.example.myroutes.ui.home;
+package com.example.myroutes;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -7,11 +7,13 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.CheckBox;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -26,25 +28,26 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.example.myroutes.WorkoutFragment;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.Wall;
+import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.mongoClasses.WorkoutItem;
+import com.example.myroutes.ui.home.ExpandableListAdapter;
+import com.example.myroutes.ui.home.HomeModel;
 import com.example.myroutes.util.WallDrawingHelper;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
-public class HomeFragment extends Fragment {
-    private static final String TAG = "HomeFragment";
+public class StartWorkoutFragment extends Fragment {
+    private static final String TAG = "StartWorkoutFragment";
 
     // View models
     private SharedViewModel model;
-    private HomeModel fragmentModel;
+    private WorkoutModel fragmentModel;
 
     // Wall data
     private Wall wall;
@@ -63,17 +66,16 @@ public class HomeFragment extends Fragment {
     private TextView boulderName;
     private LinearLayout toggleButtonLayout;
     private ImageView imageView;
-
-    // Grade button variables
-    private List<String> allGrades;
-    private RadioGroup gradeButtonGroup;
+    private CheckBox checkBox;
 
     // List variables
     private ExpandableListView listView;
-    private ExpandableListAdapter adapter;
+    private StartWorkoutExpandableListAdapter adapter;
 
-    // The boulder items in the current selected grade
-    private List<BoulderItem> boulderItems;
+    // Workout data
+    private WorkoutItem workoutItem;
+    private List<Integer> groupIndices;
+    private List<List<BoulderItem>> boulderSets;
     private int nBoulders;
 
     @Override
@@ -82,7 +84,7 @@ public class HomeFragment extends Fragment {
             Bundle savedInstanceState
     ) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        return inflater.inflate(R.layout.fragment_start_workout, container, false);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -91,105 +93,80 @@ public class HomeFragment extends Fragment {
 
         // Get models
         model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        fragmentModel = new ViewModelProvider(this).get(HomeModel.class);
+        fragmentModel = new ViewModelProvider(requireActivity()).get(WorkoutModel.class);
 
-        // Check for changes in the current wall
-        final ProgressBar progressBar = view.findViewById(R.id.progressBar_cyclic);
-        final TextView messageText = view.findViewById(R.id.error_message);
-        messageText.setVisibility(View.VISIBLE);
-        model.getCurrentWallStatus().observe(getViewLifecycleOwner(), result -> {
-            if (result == null) {
-                progressBar.setVisibility(View.GONE);
-                String message = "You have no walls. Go to the Manage Walls panel to add one.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.FAILURE) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. Something went wrong. Make sure you are connected to the internet and try again.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.NOT_FOUND) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. The wall you tried to go to no longer exists.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.LOADING) {
-                progressBar.setVisibility(View.VISIBLE);
-            }
-            else {
-                messageText.setVisibility(View.GONE);
-                progressBar.setVisibility(View.GONE);
-                this.wall = model.getWall(model.getCurrentWallId());
-                this.imgBitmap = wall.getBitmap();
-                if (adapter != null) {
-                    adapter.setItems(wall.getBoulders());
+        // Get the wall and workout
+        Log.e(TAG, fragmentModel.getWall_id());
+        this.wall = model.getWall(fragmentModel.getWall_id());
+        String workout_id = fragmentModel.getWorkout_id();
+        this.workoutItem = wall.searchWorkout(workout_id);
+
+        // Something went wrong
+        if (this.workoutItem == null) {
+            return;
+        }
+        else {
+            // TODO: make more efficient
+            // Get boulderItems from the boulder_ids in the workoutItem
+            boulderSets = new ArrayList<>();
+            groupIndices = new ArrayList<>();
+            List<List<String>> boulderSetList = workoutItem.getWorkoutSets();
+            int nSets = boulderSetList.size();
+            for (int i = 0; i < nSets; i++) {
+                List<String> boulderIds = boulderSetList.get(i);
+                List<BoulderItem> boulderItems = new ArrayList<>();
+                for (String boulder_id : boulderIds) {
+                    BoulderItem b = wall.searchBoulder(boulder_id);
+                    if (b != null) {
+                        groupIndices.add(i);
+                        boulderItems.add(b);
+                    }
                 }
-                setupView(view);
+                if (!boulderItems.isEmpty()) { boulderSets.add(boulderItems); }
             }
-        });
+            // Setup the view
+            nBoulders = groupIndices.size();
+            setupView(view);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private void setupView(View view) {
         // Get hold paths of the current wall
         paths = wall.getPaths();
+        imgBitmap = wall.getBitmap();
 
-        // Handle navigation
-        FloatingActionButton goToAddBoulder = view.findViewById(R.id.floatingActionButton);
-        goToAddBoulder.setOnClickListener(this::goToAddBoulderFragment);
+        // Handle back navigation
+        ImageView backButton = view.findViewById(R.id.backButton);
+        backButton.setOnClickListener(this::goToWorkoutFragment);
 
         // Get views
         TextView wallName = view.findViewById(R.id.wallName);
-        wallName.setText(wall.getName());
+        wallName.setText(workoutItem.getWorkout_name());
         toggleButtonLayout = view.findViewById(R.id.toggleButtonLayout);
         imageView = view.findViewById(R.id.imageView2);
         boulderName = view.findViewById(R.id.boulderName);
         dropdownButton = view.findViewById(R.id.dropdownButton);
+        checkBox = view.findViewById(R.id.checkBox);
 
         // Set up listeners
         dropdownButton.setOnClickListener(v -> onClickDrowdown());
         boulderName.setOnClickListener(v -> onClickDrowdown());
         imageView.setOnTouchListener(new SwipeListener());
 
-        // Figure out which grades this wall has and only show buttons for those grades
-        gradeButtonGroup = view.findViewById(R.id.gradeButtonGroup);
-        allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
-        Set<String> currentGradesSet = wall.getBoulders().keySet();
-        List<String> currentGrades = new ArrayList<>();
-        for (String s : allGrades) {
-            if (currentGradesSet.contains(s)) { currentGrades.add(s); }
-            int buttonIdx = allGrades.indexOf(s);
-            gradeButtonGroup.getChildAt(buttonIdx).setVisibility(
-                    (currentGradesSet.contains(s)) ? View.VISIBLE : View.GONE);
-        }
-
-        // Called when new grade button is clicked
-        gradeButtonGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            RadioButton button = (RadioButton) group.findViewById(checkedId);
-            String grade = button.getText().toString();
-            // Show the first boulder of that grade
-            if (!grade.equals(fragmentModel.getGrade())) {
-                onClickGradeButton(button.getText().toString(), 0);
-            }
-        });
-
-        if (wall.getBoulders().size() == 0) {
-            TextView messageText = view.findViewById(R.id.noBouldersMessage);
-            String message = "You don't have any boulders! Add some by clicking the plus button below.";
-            messageText.setText(message);
-            messageText.setVisibility(View.VISIBLE);
-        }
-
         // Setup expandable list view
-        adapter = new ExpandableListAdapter(requireContext(), currentGrades, wall.getBoulders());
+        adapter = new StartWorkoutExpandableListAdapter(requireContext(), boulderSets);
         listView = view.findViewById(R.id.expandableListView);
         listView.setVisibility(View.GONE);
         listView.setAdapter(adapter);
         listView.setOnTouchListener(new VerticalSwipeListener());
         listView.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
-            // Update the view
-            RadioButton b = (RadioButton) gradeButtonGroup.getChildAt(groupPosition);
-            onClickGradeButton(b.getText().toString(), childPosition);
+            if (fragmentModel.getSetIdx() != groupPosition) {
+                setSetIdx(fragmentModel.getSetIdx(), fragmentModel.getBoulderIdx());
+            }
+            else {
+                setBoulderIdx(groupPosition, childPosition);
+            }
             return true;
         });
 
@@ -204,9 +181,9 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void goToAddBoulderFragment(View v) {
-        NavHostFragment.findNavController(HomeFragment.this)
-                .navigate(R.id.nav_addBoulder);
+    private void goToWorkoutFragment(View v) {
+        NavHostFragment.findNavController(StartWorkoutFragment.this)
+                .navigate(R.id.nav_workouts);
     }
 
     // Toggle expandable list view dropdown
@@ -241,47 +218,33 @@ public class HomeFragment extends Fragment {
         imageView.setImageBitmap(drawingBitmap);
 
         // Select first boulder if it exists
-        if (adapter.getGroupCount() > 0) {
-            BoulderItem first = (BoulderItem) adapter.getChild(0, 0);
-            onClickGradeButton(first.getBoulder_grade(), 0);
-        }
+        setSetIdx(fragmentModel.getSetIdx(), fragmentModel.getBoulderIdx());
+
+        // Watch checkbox
+        checkBox.setOnClickListener(v -> {
+            goToNextBoulder();
+            checkBox.setChecked(false);
+        });
     }
 
-    private void onClickGradeButton(String currentGrade, int boulderIdx) {
-        // Make sure current grade button is selected
-        fragmentModel.setGrade(currentGrade);
-        ((RadioButton) gradeButtonGroup.getChildAt(allGrades.indexOf(currentGrade))).setChecked(true);
-
-        // Remove radioButtons from previous click
-        toggleButtonLayout.removeAllViews();
-
-        // Clear previous drawn paths
-        canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
-        imageView.setImageBitmap(drawingBitmap);
-
-        // Get boulders of the selected grade
-        boulderItems = wall.getBoulders().get(currentGrade);
-        nBoulders = boulderItems.size();
-
-        // Create toggle radio buttons to show the index of the current boulder
-        for (int j = 0; j < nBoulders; j++) {
+    // Create toggle radio buttons to show the index of the current boulder
+    private void createToggleButtons(int setIdx, int nButtons) {
+        for (int j = 0; j < nButtons; j++) {
             RadioButton radioButton = new RadioButton(getContext());
             radioButton.setId(j);
-            radioButton.setOnClickListener(v -> setBoulderIdx(v.getId()));
+            radioButton.setOnClickListener(v -> setBoulderIdx(setIdx, v.getId()));
 
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
             );
             toggleButtonLayout.addView(radioButton, lp);
         }
-
-        // Draw the selected boulder
-        setBoulderIdx(boulderIdx);
     }
 
     private void toggleRadioButton(View view) {
         // Unselect all other buttons
-        for (int i = 0; i < nBoulders; i++) {
+        int nButtons = toggleButtonLayout.getChildCount();
+        for (int i = 0; i < nButtons; i++) {
             RadioButton previous = toggleButtonLayout.findViewById(i);
             previous.setClickable(true);
             previous.setChecked(false);
@@ -293,10 +256,21 @@ public class HomeFragment extends Fragment {
         button.setChecked(true);
     }
 
-    private void setBoulderIdx(int boulderIdx) {
+    private void setSetIdx(int setIdx, int boulderIdx) {
+        fragmentModel.setSetIdx(setIdx);
+
+        toggleButtonLayout.removeAllViews();
+        createToggleButtons(setIdx, adapter.getChildrenCount(setIdx));
+        setBoulderIdx(setIdx, boulderIdx);
+    }
+
+    private void setBoulderIdx(int setIdx, int boulderIdx) {
         // Clear previous drawn paths
         canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
         imageView.setImageBitmap(drawingBitmap);
+
+        // Get the boulderItem
+        BoulderItem boulderItem = boulderSets.get(groupIndices.get(boulderIdx)).get(boulderIdx);
 
         // Select the current toggle button
         toggleRadioButton(toggleButtonLayout.findViewById(boulderIdx));
@@ -305,7 +279,6 @@ public class HomeFragment extends Fragment {
         fragmentModel.setBoulderIdx(boulderIdx);
 
         // Get the paths of the holds associated with this route
-        BoulderItem boulderItem = boulderItems.get(boulderIdx);
         ArrayList<Integer> holdIndices = boulderItem.getBoulder_holds();
         ArrayList<Path> route = new ArrayList<>();
         for (int holdIdx : holdIndices) {
@@ -314,11 +287,19 @@ public class HomeFragment extends Fragment {
 
         // Get name of this route
         String name = (boulderItem.getBoulder_name().isEmpty()) ? "Unnamed" : boulderItem.getBoulder_name();
-        boulderName.setText(String.format("%s - %s", fragmentModel.getGrade(), name));
+        boulderName.setText(String.format(Locale.US, "Set %d - %s", setIdx + 1, name));
 
         // Draw the route
         drawPaths(route);
     }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        listView = null;
+    }
+
+    /*-----------------------------------------Helpers--------------------------------------------*/
 
     private void drawPaths(ArrayList<Path> paths) {
         for (Path p : paths) {
@@ -330,10 +311,35 @@ public class HomeFragment extends Fragment {
         imageView.setImageBitmap(drawingBitmap);
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        listView = null;
+    private void goToNextBoulder() {
+        int setIdx = fragmentModel.getSetIdx();
+        int boulderIdx = fragmentModel.getBoulderIdx();
+
+        // Check if set index will change
+        if (boulderIdx == adapter.getChildrenCount(setIdx) - 1) {
+            int groupIdx = setIdx + 1;
+            if (groupIdx >= adapter.getGroupCount()) return;
+            setSetIdx(groupIdx, 0);
+        }
+        else {
+            setBoulderIdx(setIdx, boulderIdx + 1);
+        }
+    }
+
+    private void goToPreviousBoulder() {
+        int setIdx = fragmentModel.getSetIdx();
+        int boulderIdx = fragmentModel.getBoulderIdx();
+
+        // Check if set index will change
+        if (boulderIdx == 0) {
+            int groupIdx = setIdx - 1;
+            if (groupIdx < 0) return;
+            int childIdx = adapter.getChildrenCount(groupIdx) - 1;
+            setSetIdx(groupIdx, childIdx);
+        }
+        else {
+            setBoulderIdx(setIdx, boulderIdx - 1);
+        }
     }
 
     /*-----------------------------------------Listeners------------------------------------------*/
@@ -347,7 +353,7 @@ public class HomeFragment extends Fragment {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             // Ignore touch if there aren't any boulders
-            if (boulderItems == null) return true;
+            if (boulderSets == null) return true;
             if (nBoulders == 0) return true;
 
             // Look for swipes of size at least MIN_DISTANCE
@@ -360,19 +366,11 @@ public class HomeFragment extends Fragment {
                     float deltaX = x2 - x1;
 
                     if (Math.abs(deltaX) > MIN_DISTANCE) {
-                        int boulderIdx = fragmentModel.getBoulderIdx();
-
                         // Left to Right swipe action (prev boulder)
-                        if (x2 > x1) {
-                            int idx = (boulderIdx == 0) ? nBoulders - 1 : boulderIdx - 1;
-                            setBoulderIdx(idx);
-                        }
+                        if (x2 > x1) { goToPreviousBoulder(); }
 
                         // Right to left swipe action (next boulder)
-                        else {
-                            int idx = (boulderIdx + 1) % nBoulders;
-                            setBoulderIdx(idx);
-                        }
+                        else { goToNextBoulder();  }
 
                     }
                     break;

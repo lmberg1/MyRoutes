@@ -12,6 +12,7 @@ import com.example.myroutes.db.backends.MongoWebservice;
 import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.db.mongoClasses.WallDataItem;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
+import com.example.myroutes.db.mongoClasses.WorkoutItem;
 import com.mongodb.stitch.android.core.auth.StitchUser;
 
 import java.lang.ref.WeakReference;
@@ -63,37 +64,41 @@ public class WallDataRepository {
     /*-----------------------------------Handle Boulder Data -------------------------------------*/
 
     LiveData<Result<List<BoulderItem>>> getBoulders(String wall_id) {
-        // Try to get from dao
-        /*if (boulderDao.hasAnyFromWall(wall_id)) {
-            MediatorLiveData<Result<List<BoulderItem>>> result = new MediatorLiveData<>();
-            LiveData<List<BoulderItem>> boulders = boulderDao.getAllFromWall(wall_id);
-
-            result.addSource(boulders, o -> {
-                result.setValue(new Result.Success<>(o));
-            });
-
-            return result;
-        }*/
-
-        // Otherwise check database
         return MongoWebservice.getBouldersFromMongo(wall_id);
     }
 
     LiveData<Result<RemoteInsertOneResult>> insertBoulder(BoulderItem item) {
-        // Insert to local storage
-        /*WallDataRoomDatabase.databaseWriteExecutor.execute(() -> {
-            boulderDao.insert(item);
-        });*/
-
-        // Insert to mongo
         return MongoWebservice.addBoulderToMongo(item);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteBoulders(String wall_id) {
-        /*WallDataRoomDatabase.databaseWriteExecutor.execute(() -> {
-            boulderDao.deleteAll();
-        });*/
+    LiveData<Result<RemoteDeleteResult>> deleteAllBoulders(String wall_id) {
         return MongoWebservice.deleteBouldersFromMongo(wall_id);
+    }
+
+    LiveData<Result<RemoteDeleteResult>> deleteBoulder(String wall_id, String boulder_id) {
+        return MongoWebservice.deleteBoulderFromMongo(wall_id, boulder_id);
+    }
+
+    LiveData<Result<RemoteDeleteResult>> deleteAllUserBoulders() {
+        return MongoWebservice.deleteAllUserBouldersFromMongo(stitchUserId);
+    }
+
+    /*-----------------------------------Handle Workout Data -------------------------------------*/
+
+    LiveData<Result<RemoteInsertOneResult>> inserWorkout(WorkoutItem item) {
+        return MongoWebservice.addWorkoutToMongo(item);
+    }
+
+    LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {
+        return MongoWebservice.getWorkoutsFromMongo(wall_id);
+    }
+
+    LiveData<Result<RemoteDeleteResult>> deleteAllWorkouts(String wall_id) {
+        return MongoWebservice.deleteWorkoutsFromMongo(wall_id);
+    }
+
+    LiveData<Result<RemoteDeleteResult>> deleteWorkout(String wall_id, String workout_id) {
+        return MongoWebservice.deleteWorkoutFromMongo(wall_id, workout_id);
     }
 
     /*--------------------------------------Handle Wall Data -------------------------------------*/

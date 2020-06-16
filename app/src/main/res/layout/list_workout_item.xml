@@ -5,7 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="60dp"
     android:animateLayoutChanges="true"
-    android:background="#F1F1F1"
     android:gravity="center|center_horizontal|center_vertical"
     android:orientation="horizontal"
     android:paddingStart="16dp"
@@ -23,7 +22,7 @@
         android:textSize="14sp" />
 
     <ImageView
-        android:id="@+id/editWallInfo"
+        android:id="@+id/editWorkout"
         android:layout_width="50dp"
         android:layout_height="match_parent"
         android:background="#00FFFFFF"
@@ -35,20 +34,6 @@
         android:tint="@color/colorPrimary"
         android:visibility="visible"
         card_view:srcCompat="@drawable/ic_create_black_24dp" />
-
-    <ImageView
-        android:id="@+id/goToWallButton"
-        android:layout_width="50dp"
-        android:layout_height="match_parent"
-        android:background="?android:attr/windowBackground"
-        android:focusable="false"
-        android:focusableInTouchMode="false"
-        android:padding="20dp"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp"
-        android:src="@drawable/ic_baseline_exit_to_app_24"
-        android:tint="@color/colorPrimary"
-        android:visibility="gone" />
 
     <Button
         android:id="@+id/startWorkout"

@@ -11,7 +11,9 @@ import com.example.myroutes.db.Result;
 import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.mongoClasses.WallDataItem;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
+import com.example.myroutes.db.mongoClasses.WorkoutItem;
 import com.google.android.gms.tasks.Task;
+import com.mongodb.client.model.Filters;
 import com.mongodb.stitch.android.core.Stitch;
 import com.mongodb.stitch.android.core.StitchAppClient;
 import com.mongodb.stitch.android.core.auth.StitchUser;
@@ -24,6 +26,7 @@ import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
 
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,8 @@ import static com.example.myroutes.db.mongoClasses.WallDataItem.WALL_DATABASE;
 import static com.example.myroutes.db.mongoClasses.WallDataItem.WALL_ITEMS_COLLECTION;
 import static com.example.myroutes.db.mongoClasses.WallImageItem.WALL_IMAGE_COLLECTION;
 import static com.example.myroutes.db.mongoClasses.WallImageItem.WALL_IMAGE_DATABASE;
+import static com.example.myroutes.db.mongoClasses.WorkoutItem.WORKOUT_COLLECTION;
+import static com.example.myroutes.db.mongoClasses.WorkoutItem.WORKOUT_DATABASE;
 
 public class MongoWebservice {
     private static final String TAG = "MongoWebService";
@@ -43,6 +48,7 @@ public class MongoWebservice {
     private static RemoteMongoCollection<WallDataItem> wallCollection;
     private static RemoteMongoCollection<WallImageItem> wallImageCollection;
     private static RemoteMongoCollection<BoulderItem> boulderCollection;
+    private static RemoteMongoCollection<WorkoutItem> workoutCollection;
 
     // Helper class to run a mongo task
     private static class MongoHelper<T> {
@@ -136,7 +142,59 @@ public class MongoWebservice {
         String errorMsg = "Failed to delete boulders for wall " + wall_id;
         Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
         return new MongoHelper<RemoteDeleteResult>()
-                .runMongoTask(wallImageCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
+                .runMongoTask(boulderCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
+    }
+
+    public static LiveData<Result<RemoteDeleteResult>> deleteBoulderFromMongo(String wall_id, String boulder_id) {
+        assert wall_id != null;
+        String errorMsg = "Failed to delete workouts for wall " + wall_id;
+        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, wall_id),
+                Filters.eq(BoulderItem.Fields.BOULDER_ID, boulder_id));
+        return new MongoHelper<RemoteDeleteResult>()
+                .runMongoTask(boulderCollection.deleteOne(filter), MongoTask.DELETE, errorMsg);
+    }
+
+    public static LiveData<Result<RemoteDeleteResult>> deleteAllUserBouldersFromMongo(String user_id) {
+        assert user_id != null;
+        String errorMsg = "Failed to delete all boulders";
+        Document filter = new Document(WallImageItem.Fields.USER_ID, user_id);
+        return new MongoHelper<RemoteDeleteResult>()
+                .runMongoTask(boulderCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
+    }
+
+    /*------------------------------------HANDLE WORKOUTS-----------------------------------------*/
+
+    public static LiveData<Result<List<WorkoutItem>>> getWorkoutsFromMongo(String wall_id) {
+        assert wall_id != null;
+        String errorMsg = String.format("Failed to load workouts for wall %s", wall_id);
+        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        List<WorkoutItem> items = new ArrayList<>();
+        return new MongoHelper<List<WorkoutItem>>()
+                .runMongoTask(workoutCollection.find(filter).into(items), MongoTask.GET, errorMsg);
+    }
+
+    public static LiveData<Result<RemoteInsertOneResult>> addWorkoutToMongo(WorkoutItem item) {
+        assert item != null;
+        String errorMsg = "Failed to add workouts for wall " + item.getWall_id();
+        return new MongoHelper<RemoteInsertOneResult>()
+                .runMongoTask(workoutCollection.insertOne(item), MongoTask.ADD, errorMsg);
+    }
+
+    public static LiveData<Result<RemoteDeleteResult>> deleteWorkoutsFromMongo(String wall_id) {
+        assert wall_id != null;
+        String errorMsg = "Failed to delete workouts for wall " + wall_id;
+        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        return new MongoHelper<RemoteDeleteResult>()
+                .runMongoTask(workoutCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
+    }
+
+    public static LiveData<Result<RemoteDeleteResult>> deleteWorkoutFromMongo(String wall_id, String workout_id) {
+        assert wall_id != null;
+        String errorMsg = "Failed to delete workouts for wall " + wall_id;
+        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, wall_id),
+                Filters.eq(WorkoutItem.Fields.WORKOUT_ID, workout_id));
+        return new MongoHelper<RemoteDeleteResult>()
+                .runMongoTask(workoutCollection.deleteOne(filter), MongoTask.DELETE, errorMsg);
     }
 
     /*----------------------------------HANDLE AUTHENTICATION-------------------------------------*/
@@ -166,6 +224,13 @@ public class MongoWebservice {
                 .withCodecRegistry(CodecRegistries.fromRegistries(
                         BsonUtils.DEFAULT_CODEC_REGISTRY,
                         CodecRegistries.fromCodecs(BoulderItem.codec)));
+
+        // Initialize workout collection
+        workoutCollection = mongoClient.getDatabase(WORKOUT_DATABASE)
+                .getCollection(WORKOUT_COLLECTION, WorkoutItem.class)
+                .withCodecRegistry(CodecRegistries.fromRegistries(
+                        BsonUtils.DEFAULT_CODEC_REGISTRY,
+                        CodecRegistries.fromCodecs(WorkoutItem.codec)));
 
         // Authenticate with MongoDB
         Document usernameAuth = new Document("username", username);

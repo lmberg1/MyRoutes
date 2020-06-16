@@ -15,6 +15,20 @@ import com.example.myroutes.db.SharedViewModel;
 
 public class AlertDialogManager {
 
+    public static AlertDialog createAddSetDialog(Context context) {
+        // Inflate the layout
+        LayoutInflater layoutInflater = LayoutInflater.from(context);
+        View popupInputDialogView = layoutInflater.inflate(R.layout.alert_dialog_create_workout_set, null);
+
+        // Create the dialog
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+        alertDialogBuilder.setCancelable(true);
+        alertDialogBuilder.setTitle("Create Bouldering Set");
+        alertDialogBuilder.setView(popupInputDialogView);
+
+        return alertDialogBuilder.create();
+    }
+
     public static AlertDialog createAddWallDialog(Context context) {
         // Inflate the layout
         LayoutInflater layoutInflater = LayoutInflater.from(context);

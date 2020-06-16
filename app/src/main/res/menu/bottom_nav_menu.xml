@@ -7,9 +7,9 @@
         android:title="Home" />
 
     <item
-        android:id="@+id/nav_addBoulder"
-        android:icon="@drawable/ic_add_circle_black_24dp"
-        android:title="Add Boulder" />
+        android:id="@+id/nav_workouts"
+        android:icon="@drawable/ic_baseline_dashboard_24"
+        android:title="My Workouts" />
 
     <item
         android:id="@+id/nav_manage_walls"

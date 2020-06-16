@@ -18,6 +18,7 @@ public class BoulderItem {
     public static final String BOULDER_ITEMS_COLLECTION = "boulder-data";
 
     private final String wall_id;
+    private final String boulder_id;
     private final String boulder_grade;
     private final String user_id;
     private final String boulder_name;
@@ -26,11 +27,13 @@ public class BoulderItem {
     public BoulderItem(
             final String user_id,
             final String wall_id,
+            final String boulder_id,
             final String boulder_name,
             final String boulder_grade,
             final ArrayList<Integer> boulder_holds) {
         this.user_id = user_id;
         this.wall_id = wall_id;
+        this.boulder_id = boulder_id;
         this.boulder_name = boulder_name;
         this.boulder_grade = boulder_grade;
         this.boulder_holds = boulder_holds;
@@ -42,6 +45,10 @@ public class BoulderItem {
 
     public String getWall_id() {
         return wall_id;
+    }
+
+    public String getBoulder_id() {
+        return boulder_id;
     }
 
     public String getBoulder_name() {
@@ -60,6 +67,7 @@ public class BoulderItem {
         final BsonDocument asDoc = new BsonDocument();
         asDoc.put(Fields.USER_ID, new BsonString(item.getUser_id()));
         asDoc.put(Fields.WALL_ID, new BsonString(item.getWall_id()));
+        asDoc.put(Fields.BOULDER_ID, new BsonString(item.getBoulder_id()));
         asDoc.put(Fields.BOULDER_NAME, new BsonString(item.getBoulder_name()));
         asDoc.put(Fields.BOULDER_GRADE, new BsonString(item.getBoulder_grade()));
 
@@ -85,6 +93,7 @@ public class BoulderItem {
         return new BoulderItem(
                 doc.getString(Fields.USER_ID).getValue(),
                 doc.getString(Fields.WALL_ID).getValue(),
+                doc.getString(Fields.BOULDER_ID).getValue(),
                 doc.getString(Fields.BOULDER_NAME).getValue(),
                 doc.getString(Fields.BOULDER_GRADE).getValue(),
                 holdList
@@ -92,11 +101,12 @@ public class BoulderItem {
     }
 
     public static final class Fields {
-        static final String USER_ID = "user_id";
-        static final String WALL_ID = "wall_id";
-        static final String BOULDER_NAME = "boulder_name";
-        static final String BOULDER_GRADE = "boulder_grade";
-        static final String BOULDER_HOLDS = "boulder_holds";
+        public static final String USER_ID = "user_id";
+        public static final String WALL_ID = "wall_id";
+        public static final String BOULDER_ID = "boulder_id";
+        public static final String BOULDER_NAME = "boulder_name";
+        public static final String BOULDER_GRADE = "boulder_grade";
+        public static final String BOULDER_HOLDS = "boulder_holds";
     }
 
     public static final Codec<BoulderItem> codec = new Codec<BoulderItem>() {

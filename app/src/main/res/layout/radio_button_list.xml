@@ -15,6 +15,7 @@
         android:button="@android:color/transparent"
         android:text="V0"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -26,6 +27,7 @@
         android:button="@android:color/transparent"
         android:text="V1"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -37,6 +39,7 @@
         android:button="@android:color/transparent"
         android:text="V2"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -48,6 +51,7 @@
         android:button="@android:color/transparent"
         android:text="V3"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -59,6 +63,7 @@
         android:button="@android:color/transparent"
         android:text="V4"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -70,6 +75,7 @@
         android:button="@android:color/transparent"
         android:text="V5"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -81,6 +87,7 @@
         android:button="@android:color/transparent"
         android:text="V6"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -92,6 +99,7 @@
         android:button="@android:color/transparent"
         android:text="V7"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -103,6 +111,7 @@
         android:button="@android:color/transparent"
         android:text="V8"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -114,6 +123,7 @@
         android:button="@android:color/transparent"
         android:text="V9"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
     <RadioButton
@@ -124,6 +134,7 @@
         android:button="@android:color/transparent"
         android:text="V10"
         android:textAlignment="center"
+        android:textColor="#FFFFFF"
         android:visibility="invisible" />
 
 </RadioGroup>
