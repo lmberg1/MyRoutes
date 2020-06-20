@@ -7,4 +7,6 @@
     <color name="colorPrimary">#4A5899</color>
     <color name="colorPrimaryDark">#303A66</color>
     <color name="colorAccent">#65DEF1</color>
+
+    <color name="colorCancel">#DF3636</color>
 </resources>

@@ -21,6 +21,7 @@ import java.util.List;
 import com.example.myroutes.db.SharedViewModel.Status;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
+import com.mongodb.stitch.core.services.mongodb.remote.RemoteUpdateResult;
 
 public class WallDataRepository {
     private static final String TAG = "WallDataRepository";
@@ -71,6 +72,10 @@ public class WallDataRepository {
         return MongoWebservice.addBoulderToMongo(item);
     }
 
+    LiveData<Result<RemoteUpdateResult>> updateBoulder(BoulderItem item) {
+        return MongoWebservice.editBoulderInMongo(item);
+    }
+
     LiveData<Result<RemoteDeleteResult>> deleteAllBoulders(String wall_id) {
         return MongoWebservice.deleteBouldersFromMongo(wall_id);
     }
@@ -87,6 +92,10 @@ public class WallDataRepository {
 
     LiveData<Result<RemoteInsertOneResult>> inserWorkout(WorkoutItem item) {
         return MongoWebservice.addWorkoutToMongo(item);
+    }
+
+    LiveData<Result<RemoteUpdateResult>> updateWorkout(WorkoutItem item) {
+        return MongoWebservice.editWorkoutInMongo(item);
     }
 
     LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {

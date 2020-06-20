@@ -76,10 +76,7 @@ public class ManageWallsFragment extends Fragment {
         model.getCurrentWallStatus().observe(getViewLifecycleOwner(), result -> {
             //if (result != SharedViewModel.Status.SUCCESS) { return; }
             currentWallId = model.getCurrentWallId();
-            if (adapter != null) {
-                adapter.setCurrentId(currentWallId);
-                //adapter.notifyDataSetChanged();
-            }
+            if (adapter != null) { adapter.setCurrentId(currentWallId); }
         });
 
         // Initialize class to help with selecting image from gallery
@@ -141,17 +138,27 @@ public class ManageWallsFragment extends Fragment {
         // Get views
         Button connectToWall = alertDialog.findViewById(R.id.connectToWall);
         EditText wallIdText = alertDialog.findViewById(R.id.wallId);
-        assert (connectToWall != null) && (wallIdText != null);
+        Button cancel = alertDialog.findViewById(R.id.cancel);
+        assert (connectToWall != null) && (wallIdText != null) && (cancel != null);
 
         // Let user cancel dialog
+        cancel.setOnClickListener(v -> alertDialog.cancel());
+
+        // Connect to wall
         connectToWall.setOnClickListener(v -> {
-            // Check if user already has this wall
+            // Handle errors
             String wallId = wallIdText.getText().toString();
             if (model.hasWall_id(wallId)) {
-                Toast.makeText(context,
-                        "You already have this wall saved!", Toast.LENGTH_SHORT).show();
+                String error = "You already have this wall saved";
+                wallIdText.setError(error);
                 return;
             }
+            else if (wallId.length() != 6) {
+                String error = "Wall ids are 6 characters long";
+                wallIdText.setError(error);
+                return;
+            }
+
             // Close the alert dialog
             alertDialog.cancel();
 
@@ -229,6 +236,8 @@ public class ManageWallsFragment extends Fragment {
             goToWall.setOnClickListener(v -> onUpdateWall(info));
         });
     }
+
+    /*--------------------------------Callbacks for list items------------------------------------*/
 
     private void onUpdateWall(WallMetadata item) {
         // Update current wall

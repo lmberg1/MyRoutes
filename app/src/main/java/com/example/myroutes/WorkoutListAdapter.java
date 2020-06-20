@@ -28,6 +28,7 @@ public class WorkoutListAdapter extends ArrayAdapter<WorkoutItem> {
     private final Context context;
     private List<WorkoutItem> workouts;
     private Consumer<String> onStartWorkout;
+    private Consumer<Integer> onEditWorkout;
 
     public WorkoutListAdapter(Context context, List<WorkoutItem> workouts) {
         super(context, 0, workouts);
@@ -37,6 +38,10 @@ public class WorkoutListAdapter extends ArrayAdapter<WorkoutItem> {
 
     public void setOnStartWorkout(Consumer<String> onStartWorkout) {
         this.onStartWorkout = onStartWorkout;
+    }
+
+    public void setOnEditWorkout(Consumer<Integer> onEditWorkout) {
+        this.onEditWorkout = onEditWorkout;
     }
 
     @Override
@@ -57,6 +62,10 @@ public class WorkoutListAdapter extends ArrayAdapter<WorkoutItem> {
 
         if (onStartWorkout != null) {
             start.setOnClickListener(v -> onStartWorkout.accept(item.getWorkout_id()));
+        }
+
+        if (onEditWorkout != null) {
+            edit.setOnClickListener(v -> onEditWorkout.accept(position));
         }
 
         // Set information

@@ -18,7 +18,7 @@
         android:paddingEnd="16dp"
         android:src="@drawable/abc_vector_test"
         android:tint="#FFFFFF"
-        app:layout_constraintBottom_toTopOf="@id/horizontalScrollView"
+        app:layout_constraintBottom_toTopOf="@id/bottomAppBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -39,7 +39,7 @@
             android:id="@+id/wallName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:maxWidth="150dp"
             android:maxLines="1"
@@ -48,17 +48,36 @@
             android:textSize="18sp"
             android:typeface="normal" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/nextButton"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:drawableEnd="@drawable/ic_baseline_arrow_forward_24"
+            android:text="Next"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/continueButton"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start Workout"
+            android:textAllCaps="false"
+            android:visibility="visible" />
 
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/horizontalScrollView"
+        android:id="@+id/bottomAppBar"
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/colorPrimary"
@@ -75,16 +94,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="center_vertical">
+            android:gravity="center_horizontal|center_vertical"
+            android:visibility="invisible">
 
             <TextView
-                android:id="@+id/textView6"
+                android:id="@+id/instruction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="Set 1:"
-                android:textColor="@android:color/white"
-                android:textSize="18sp" />
+                android:text="Climb:  "
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
 
             <TextView
                 android:id="@+id/boulderName"
@@ -97,7 +116,7 @@
                 android:minWidth="100dp"
                 android:text="Boulder 1"
                 android:textColor="@color/colorAccent"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
 
             <ImageButton
                 android:id="@+id/dropdownButton"
@@ -109,14 +128,26 @@
 
         </LinearLayout>
 
-        <CheckBox
-            android:id="@+id/checkBox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:buttonTint="@color/colorAccent"
-            android:text="Done"
-            android:textColor="#FFFFFF" />
+    </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/progressView"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:transitionName="bottomAppBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bottomAppBar">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal" />
     </LinearLayout>
 
     <ExpandableListView
@@ -130,7 +161,7 @@
         android:translationZ="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/horizontalScrollView">
+        app:layout_constraintTop_toBottomOf="@id/progressView">
 
     </ExpandableListView>
 
@@ -143,7 +174,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView">
+        app:layout_constraintTop_toBottomOf="@+id/progressView">
 
         <ImageView
             android:id="@+id/imageView2"
@@ -153,15 +184,6 @@
             android:transitionName="wallImage"
             android:visibility="visible" />
 
-        <LinearLayout
-            android:id="@+id/toggleButtonLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_weight="1"
-            android:gravity="center_horizontal|top"
-            android:minHeight="30dp"
-            android:orientation="horizontal" />
     </LinearLayout>
 
     <TextView
@@ -176,6 +198,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView" />
+        app:layout_constraintTop_toBottomOf="@+id/progressView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

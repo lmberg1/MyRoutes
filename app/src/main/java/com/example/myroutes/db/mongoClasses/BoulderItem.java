@@ -63,6 +63,14 @@ public class BoulderItem {
         return boulder_holds;
     }
 
+    public BsonArray holdsToBson() {
+        BsonArray holds = new BsonArray();
+        for (int ind : boulder_holds) {
+            holds.add(new BsonInt32(ind));
+        }
+        return holds;
+    }
+
     static BsonDocument toBsonDocument(final BoulderItem item) {
         final BsonDocument asDoc = new BsonDocument();
         asDoc.put(Fields.USER_ID, new BsonString(item.getUser_id()));

@@ -3,6 +3,7 @@ package com.example.myroutes.db;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -86,7 +87,7 @@ public class SharedViewModel extends AndroidViewModel {
         assert imageItem != null;
 
         // Immediately add data to cache
-        addWallToCache(dataItem, imageItem, null, null);
+        addWallToCache(dataItem, imageItem, new ArrayList<>(), new ArrayList<>());
 
         MediatorLiveData<Status> mediator = new MediatorLiveData<>();
         LiveData<Result<RemoteInsertOneResult>> addData = wallDataRepository.insertWallData(dataItem);
@@ -242,6 +243,9 @@ public class SharedViewModel extends AndroidViewModel {
     private void addWallToCache(WallDataItem data, WallImageItem image,
                                 List<BoulderItem> boulders, List<WorkoutItem> workouts) {
         Wall wall = new Wall(data, image, orderByGrade(boulders), workouts);
+        if (hasWall_id(wall.getId())) {
+            wall.setName(getWall_metadata(wall.getId()).getWall_name());
+        }
 
         // Update variables
         loadedWalls.putIfAbsent(wall.getId(), wall);
@@ -280,10 +284,18 @@ public class SharedViewModel extends AndroidViewModel {
         // Update walls
         Wall wall = loadedWalls.get(boulderItem.getWall_id());
         assert wall != null;
-        wall.addBoulder(boulderItem);
-        //loadedWalls.put(boulderItem.getWall_id(), wall);
 
-        // Update database
+        // Check if boulder already exists
+        BoulderItem existingBoulder = wall.searchBoulderId(boulderItem.getBoulder_id());
+        if (existingBoulder != null) {
+            wall.removeBoulder(existingBoulder);
+            wall.addBoulder(boulderItem);
+            wallDataRepository.updateBoulder(boulderItem);
+            return;
+        }
+
+        // Boulder doesn't already exist so add it to cache and repository
+        wall.addBoulder(boulderItem);
         wallDataRepository.insertBoulder(boulderItem);
     }
 
@@ -294,22 +306,30 @@ public class SharedViewModel extends AndroidViewModel {
         Wall wall = loadedWalls.get(boulderItem.getWall_id());
         assert wall != null;
         wall.removeBoulder(boulderItem);
-       // loadedWalls.put(boulderItem.getWall_id(), wall);
 
         // Update database
         wallDataRepository.deleteBoulder(boulderItem.getWall_id(), boulderItem.getBoulder_id());
     }
 
-    public void addWorkoutItem(WorkoutItem item) {
-        assert item != null;
+    public void addWorkoutItem(WorkoutItem workoutItem) {
+        assert workoutItem != null;
 
         // Update walls
-        Wall wall = loadedWalls.get(item.getWall_id());
+        Wall wall = loadedWalls.get(workoutItem.getWall_id());
         assert wall != null;
-        wall.addWorkout(item);
+
+        // Check if workout already exists
+        WorkoutItem existingWorkout = wall.searchWorkout(workoutItem.getWorkout_id());
+        if (existingWorkout != null) {
+            wall.removeWorkout(existingWorkout);
+            wall.addWorkout(workoutItem);
+            wallDataRepository.updateWorkout(workoutItem);
+            return;
+        }
 
         // Update database
-        wallDataRepository.inserWorkout(item);
+        wall.addWorkout(workoutItem);
+        wallDataRepository.inserWorkout(workoutItem);
     }
 
     public void deleteWorkoutItem(WorkoutItem item) {
@@ -369,6 +389,9 @@ public class SharedViewModel extends AndroidViewModel {
     }
 
     public void setWall_metadata(WallMetadata metadata) {
+        if (loadedWalls.containsKey(metadata.getWall_id())) {
+            loadedWalls.get(metadata.getWall_id()).setName(metadata.getWall_name());
+        }
         PreferenceManager.setWall_metadata(metadata, getSharedPreferences());
     }
 

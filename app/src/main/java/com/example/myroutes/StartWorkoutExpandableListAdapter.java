@@ -16,6 +16,8 @@ public class StartWorkoutExpandableListAdapter extends BaseExpandableListAdapter
 
     private Context context;
     private List<List<BoulderItem>> expandableListDetail;
+    private int currentGroupIdx = 0;
+    private int currentChildIdx = 0;
 
     public StartWorkoutExpandableListAdapter(Context context, List<List<BoulderItem>> expandableListDetail) {
         this.context = context;
@@ -24,6 +26,12 @@ public class StartWorkoutExpandableListAdapter extends BaseExpandableListAdapter
 
     public void setItems(List<List<BoulderItem>> expandableListDetail) {
         this.expandableListDetail = expandableListDetail;
+        notifyDataSetChanged();
+    }
+
+    public void updateCurrentBoulder(int groupIdx, int boulderIdx) {
+        this.currentGroupIdx = groupIdx;
+        this.currentChildIdx = boulderIdx;
         notifyDataSetChanged();
     }
 
@@ -48,6 +56,16 @@ public class StartWorkoutExpandableListAdapter extends BaseExpandableListAdapter
         // Set views
         number.setText(String.format(Locale.US, "%d.", expandedListPosition + 1));
         expandedListTextView.setText(boulderItem.getBoulder_name());
+
+        // Set background if current boulder
+        if ((listPosition == currentGroupIdx) && (expandedListPosition == currentChildIdx)) {
+            convertView.setBackgroundResource(R.drawable.gradebutton_selected);
+        }
+        else {
+            convertView.setBackgroundResource(0);
+            convertView.setBackgroundColor(0xAFFFFFFF);
+        }
+
         return convertView;
     }
 

@@ -14,7 +14,6 @@
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
         android:gravity="start"
-        android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingTop="16dp"
         android:paddingEnd="16dp"
@@ -23,24 +22,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <TextView
+            android:id="@+id/wallName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:ellipsize="end"
+            android:maxWidth="150dp"
+            android:maxLines="1"
+            android:text="Home"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:typeface="normal" />
+
         <LinearLayout
             android:id="@+id/dropdownLayout"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/wallName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:ellipsize="end"
-                android:maxWidth="150dp"
-                android:maxLines="1"
-                android:text="Home"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:typeface="normal" />
+            android:gravity="center_vertical"
+            android:visibility="visible">
 
             <TextView
                 android:id="@+id/boulderName"
@@ -68,7 +68,7 @@
     </LinearLayout>
 
     <HorizontalScrollView
-        android:id="@+id/horizontalScrollView"
+        android:id="@+id/progressView"
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/colorPrimary"
@@ -98,7 +98,7 @@
         android:layout_marginEnd="16dp"
         android:textColor="#FFFFFF"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/horizontalScrollView"
+        app:layout_constraintBottom_toBottomOf="@+id/progressView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/expandableListView" />
@@ -127,7 +127,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView">
+        app:layout_constraintTop_toBottomOf="@+id/progressView">
 
         <ImageView
             android:id="@+id/imageView2"
@@ -161,7 +161,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView" />
+        app:layout_constraintTop_toBottomOf="@+id/progressView" />
 
     <TextView
         android:id="@+id/error_message"
@@ -175,7 +175,18 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView" />
+        app:layout_constraintTop_toBottomOf="@+id/progressView" />
+
+    <ImageButton
+        android:id="@+id/editButton"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_edit_black_24dp"
+        android:tint="@color/colorAccent"
+        android:translationZ="1dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/progressView" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatingActionButton"
@@ -186,6 +197,7 @@
         android:clickable="true"
         android:src="@android:drawable/ic_input_add"
         android:tint="#FFFFFF"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:maxImageSize="32dp" />

@@ -31,6 +31,7 @@ import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.Wall;
+import com.example.myroutes.ui.addBoulder.AddBoulderModel;
 import com.example.myroutes.util.WallDrawingHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -45,6 +46,7 @@ public class HomeFragment extends Fragment {
     // View models
     private SharedViewModel model;
     private HomeModel fragmentModel;
+    private AddBoulderModel addBoulderModel;
 
     // Wall data
     private Wall wall;
@@ -59,6 +61,7 @@ public class HomeFragment extends Fragment {
     private Matrix matrix;
 
     // Views
+    private ImageButton editBoulder;
     private ImageButton dropdownButton;
     private TextView boulderName;
     private LinearLayout toggleButtonLayout;
@@ -81,8 +84,12 @@ public class HomeFragment extends Fragment {
             LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
+        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        view.findViewById(R.id.dropdownLayout).setVisibility(View.INVISIBLE);
+        view.findViewById(R.id.floatingActionButton).setVisibility(View.INVISIBLE);
+        view.findViewById(R.id.editButton).setVisibility(View.INVISIBLE);
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        return view;
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -92,6 +99,7 @@ public class HomeFragment extends Fragment {
         // Get models
         model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         fragmentModel = new ViewModelProvider(this).get(HomeModel.class);
+        addBoulderModel = new ViewModelProvider(requireActivity()).get(AddBoulderModel.class);
 
         // Check for changes in the current wall
         final ProgressBar progressBar = view.findViewById(R.id.progressBar_cyclic);
@@ -119,6 +127,8 @@ public class HomeFragment extends Fragment {
             else {
                 messageText.setVisibility(View.GONE);
                 progressBar.setVisibility(View.GONE);
+                view.findViewById(R.id.dropdownLayout).setVisibility(View.VISIBLE);
+                view.findViewById(R.id.floatingActionButton).setVisibility(View.VISIBLE);
                 this.wall = model.getWall(model.getCurrentWallId());
                 this.imgBitmap = wall.getBitmap();
                 if (adapter != null) {
@@ -143,10 +153,12 @@ public class HomeFragment extends Fragment {
         wallName.setText(wall.getName());
         toggleButtonLayout = view.findViewById(R.id.toggleButtonLayout);
         imageView = view.findViewById(R.id.imageView2);
+        editBoulder = view.findViewById(R.id.editButton);
         boulderName = view.findViewById(R.id.boulderName);
         dropdownButton = view.findViewById(R.id.dropdownButton);
 
         // Set up listeners
+        editBoulder.setOnClickListener(this::onClickEditBoulder);
         dropdownButton.setOnClickListener(v -> onClickDrowdown());
         boulderName.setOnClickListener(v -> onClickDrowdown());
         imageView.setOnTouchListener(new SwipeListener());
@@ -204,6 +216,11 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void onClickEditBoulder(View v) {
+        addBoulderModel.setBoulder(boulderItems.get(fragmentModel.getBoulderIdx()));
+        goToAddBoulderFragment(v);
+    }
+
     private void goToAddBoulderFragment(View v) {
         NavHostFragment.findNavController(HomeFragment.this)
                 .navigate(R.id.nav_addBoulder);
@@ -244,6 +261,9 @@ public class HomeFragment extends Fragment {
         if (adapter.getGroupCount() > 0) {
             BoulderItem first = (BoulderItem) adapter.getChild(0, 0);
             onClickGradeButton(first.getBoulder_grade(), 0);
+
+            // Allow editing of current boulder
+            editBoulder.setVisibility(View.VISIBLE);
         }
     }
 

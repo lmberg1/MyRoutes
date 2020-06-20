@@ -37,7 +37,10 @@ import com.example.myroutes.db.Wall;
 import com.example.myroutes.util.WallDrawingHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
+
+import static com.example.myroutes.db.SharedViewModel.BOULDER_GRADES;
 
 public class AddBoulderFragment extends Fragment {
     private static final String TAG = "AddBoulderFragment";
@@ -56,6 +59,10 @@ public class AddBoulderFragment extends Fragment {
     private TextView imageBottom;
     private Region imageRegion;
 
+    // Edit boulder mode views
+    private TextView editBoulderText;
+    private ImageView deleteBoulder;
+
     // Drawing variables
     private Bitmap imgBitmap;
     private Bitmap drawingBitmap;
@@ -63,6 +70,9 @@ public class AddBoulderFragment extends Fragment {
     private Paint drawPaint;
     private Paint highlightPaint;
     private Paint canvasPaint;
+
+    // Boulder item that we are editing (if in editing mode)
+    private BoulderItem boulderItem;
 
     @Override
     public View onCreateView(
@@ -79,7 +89,7 @@ public class AddBoulderFragment extends Fragment {
 
         // Initialize models
         model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        fragmentModel = new ViewModelProvider(this).get(AddBoulderModel.class);
+        fragmentModel = new ViewModelProvider(requireActivity()).get(AddBoulderModel.class);
 
         // Handle setting of current wall
         final ProgressBar progressBar = view.findViewById(R.id.progressBar_cyclic);
@@ -136,6 +146,18 @@ public class AddBoulderFragment extends Fragment {
         for (Path p : allPaths) {
             Path copy = new Path(p);
             holdPaths.add(copy);
+        }
+
+        // Check if homeFragment passed a boulderItem to edit
+        editBoulderText = view.findViewById(R.id.boulderName);
+        deleteBoulder = view.findViewById(R.id.deleteBoulder);
+        if (fragmentModel.getBoulder() != null) {
+            this.boulderItem = fragmentModel.getBoulder();
+            fragmentModel.setHighlightedHolds(boulderItem.getBoulder_holds());
+            editBoulderText.setText(String.format("Editing %s (%s)",
+                    boulderItem.getBoulder_name(), boulderItem.getBoulder_grade()));
+            deleteBoulder.setVisibility(View.VISIBLE);
+            deleteBoulder.setOnClickListener(this::onDeleteBoulderClick);
         }
 
         // Listen for imageView to be inflated so we can resize it
@@ -242,6 +264,32 @@ public class AddBoulderFragment extends Fragment {
         }
     }
 
+    private void onDeleteBoulderClick(View view) {
+        Context context = requireContext();
+        FragmentActivity activity = requireActivity();
+
+        // Create alert dialog
+        AlertDialog alertDialog = AlertDialogManager.createDeleteBoulderDialog(boulderItem, context);
+        alertDialog.show();
+
+        // Get views
+        Button cancel = alertDialog.findViewById(R.id.cancel);
+        Button delete = alertDialog.findViewById(R.id.delete);
+        assert (cancel != null) && (delete != null);
+
+        cancel.setOnClickListener(v -> alertDialog.cancel());
+        delete.setOnClickListener(v -> {
+            model.deleteBoulderItem(boulderItem);
+            boulderItem = null;
+            fragmentModel.clearHighlightedHolds();
+            editBoulderText.setText("");
+            deleteBoulder.setVisibility(View.GONE);
+            alertDialog.cancel();
+            Toast.makeText(activity.getApplicationContext(), "Deleted Boulder " + boulderItem.getBoulder_name(),
+                    Toast.LENGTH_SHORT).show();
+        });
+    }
+
     private void onSaveBoulderClick(View view) {
         Context context = requireContext();
         FragmentActivity activity = requireActivity();
@@ -276,6 +324,12 @@ public class AddBoulderFragment extends Fragment {
         assert (cancelUserDataButton != null) && (saveUserDataButton != null) &&
                 (boulderNameEditText != null) && (spinner != null);
 
+        // Autofill dialog if we are editing a boulder rather than creating one
+        if (boulderItem != null) {
+            boulderNameEditText.setText(boulderItem.getBoulder_name());
+            spinner.setSelection(Arrays.asList(BOULDER_GRADES).indexOf(boulderItem.getBoulder_grade()));
+        }
+
         // Let user cancel dialog
         cancelUserDataButton.setOnClickListener(v -> alertDialog.cancel());
 
@@ -288,15 +342,25 @@ public class AddBoulderFragment extends Fragment {
             String boulderName = boulderNameEditText.getText().toString();
             String grade = (String) spinner.getSelectedItem();
 
-            // Create new boulder item
-            String boulder_id = UUID.randomUUID().toString().substring(0, 8);
-            BoulderItem boulderItem = new BoulderItem(model.getStitchUserId(), wall_id, boulder_id,
+            // Get or create boulder id
+            String boulder_id = (boulderItem != null) ? boulderItem.getBoulder_id() :
+                    UUID.randomUUID().toString().substring(0, 8);
+
+            // Create boulder item
+            boulderItem = new BoulderItem(model.getStitchUserId(), wall_id, boulder_id,
                     boulderName, grade, fragmentModel.getHighlightedHolds());
 
             // Save the boulder item
             model.addBoulderItem(boulderItem);
-            Toast.makeText(activity.getApplicationContext(), "Added Boulder  " + boulderName,
+            Toast.makeText(activity.getApplicationContext(), "Added Boulder " + boulderName,
                     Toast.LENGTH_SHORT).show();
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        fragmentModel.setBoulder(null);
+        fragmentModel.clearHighlightedHolds();
     }
 }

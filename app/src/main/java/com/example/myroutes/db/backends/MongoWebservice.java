@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myroutes.R;
+import com.example.myroutes.WorkoutProgressAdapter;
 import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.db.Result;
 import com.example.myroutes.db.SharedViewModel;
@@ -13,6 +14,7 @@ import com.example.myroutes.db.mongoClasses.WallDataItem;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
 import com.example.myroutes.db.mongoClasses.WorkoutItem;
 import com.google.android.gms.tasks.Task;
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Filters;
 import com.mongodb.stitch.android.core.Stitch;
 import com.mongodb.stitch.android.core.StitchAppClient;
@@ -23,6 +25,7 @@ import com.mongodb.stitch.core.auth.providers.function.FunctionCredential;
 import com.mongodb.stitch.core.internal.common.BsonUtils;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
+import com.mongodb.stitch.core.services.mongodb.remote.RemoteUpdateResult;
 
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -130,6 +133,20 @@ public class MongoWebservice {
                 .runMongoTask(boulderCollection.find(filter).into(items), MongoTask.GET, errorMsg);
     }
 
+    public static LiveData<Result<RemoteUpdateResult>> editBoulderInMongo(BoulderItem item) {
+        assert item != null;
+        String errorMsg = "Failed to add boulder for wall " + item.getWall_id();
+        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, item.getWall_id()),
+                Filters.eq(BoulderItem.Fields.BOULDER_ID, item.getBoulder_id()));
+        BasicDBObject updateQuery = new BasicDBObject();
+        updateQuery.append("$set", new BasicDBObject()
+                .append(BoulderItem.Fields.BOULDER_NAME, item.getBoulder_name())
+                .append(BoulderItem.Fields.BOULDER_GRADE, item.getBoulder_grade())
+                .append(BoulderItem.Fields.BOULDER_HOLDS, item.holdsToBson()));
+        return new MongoHelper<RemoteUpdateResult>()
+                .runMongoTask(boulderCollection.updateOne(filter, updateQuery), MongoTask.ADD, errorMsg);
+    }
+
     public static LiveData<Result<RemoteInsertOneResult>> addBoulderToMongo(BoulderItem item) {
         assert item != null;
         String errorMsg = "Failed to add boulder for wall " + item.getWall_id();
@@ -178,6 +195,19 @@ public class MongoWebservice {
         String errorMsg = "Failed to add workouts for wall " + item.getWall_id();
         return new MongoHelper<RemoteInsertOneResult>()
                 .runMongoTask(workoutCollection.insertOne(item), MongoTask.ADD, errorMsg);
+    }
+
+    public static LiveData<Result<RemoteUpdateResult>> editWorkoutInMongo(WorkoutItem item) {
+        assert item != null;
+        String errorMsg = "Failed to add workout for wall " + item.getWall_id();
+        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, item.getWall_id()),
+                Filters.eq(WorkoutItem.Fields.WORKOUT_ID, item.getWorkout_id()));
+        BasicDBObject updateQuery = new BasicDBObject();
+        updateQuery.append("$set", new BasicDBObject()
+                .append(WorkoutItem.Fields.WORKOUT_ID, item.getWorkout_name())
+                .append(WorkoutItem.Fields.WORKOUT_SETS, item.setsToBson()));
+        return new MongoHelper<RemoteUpdateResult>()
+                .runMongoTask(workoutCollection.updateOne(filter, updateQuery), MongoTask.ADD, errorMsg);
     }
 
     public static LiveData<Result<RemoteDeleteResult>> deleteWorkoutsFromMongo(String wall_id) {

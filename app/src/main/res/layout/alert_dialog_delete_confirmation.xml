@@ -5,9 +5,9 @@
     android:layout_height="wrap_content"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingLeft="16dp"
+    android:paddingStart="16dp"
     android:paddingTop="20dp"
-    android:paddingRight="16dp"
+    android:paddingEnd="16dp"
     android:paddingBottom="20dp">
 
     <TableRow
@@ -21,30 +21,52 @@
             android:layout_height="wrap_content"
             android:layout_gravity="start"
             android:gravity="center_vertical"
-            android:text="Delete from device"
-            android:textColor="#DF3636" />
+            android:text="Yes, Delete from device"
+            android:textColor="@color/colorCancel" />
 
     </TableRow>
 
+    <TextView
+        android:id="@+id/ownerDeleteLocal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="10dp"
+        android:text="(Others with this wall's id will still be able to access your wall)" />
+
     <TableRow
+        android:id="@+id/ownerDeletePermanent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="start">
 
-        <Button
-            android:id="@+id/deleteWallFromDatabase"
-            style="@style/Widget.AppCompat.Button.Borderless.Colored"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:text="Delete from database"
-            android:textAllCaps="true"
-            android:textColor="#DF3636" />
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/deleteWallFromDatabase"
+                style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="Yes, Delete from database"
+                android:textAllCaps="true"
+                android:textColor="@color/colorCancel" />
+
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:text="(No one will be able to access your wall ever again)" />
+        </LinearLayout>
+
     </TableRow>
 
     <TableRow
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent">
 
         <Button
             android:id="@+id/cancel"
@@ -53,7 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical|end"
             android:layout_weight="1"
-            android:gravity="center_vertical|end"
+            android:gravity="center_vertical"
             android:text="Cancel" />
     </TableRow>
 

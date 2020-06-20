@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="-1dp"
+    app:cardBackgroundColor="@android:color/transparent"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:paddingEnd="10dp">
+
+            <TextView
+                android:id="@+id/setTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="5dp"
+                android:text="Set 1"
+                android:textAlignment="viewStart"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textView13"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="("
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/boulderProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/fraction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="/"
+                android:textAlignment="viewStart"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/boulderTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/textView14"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=")"
+                android:textColor="#FFFFFF" />
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

@@ -6,23 +6,46 @@
     android:foreground="@drawable/border"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingLeft="16dp"
     android:paddingTop="20dp"
-    android:paddingRight="16dp"
     android:paddingBottom="20dp">
 
-    <TextView
-        android:id="@+id/textView4"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Add Workout"
-        android:textSize="18sp" />
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:id="@+id/createWorkoutTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Workout"
+            android:textSize="18sp" />
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/deleteWorkout"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:tint="@color/colorCancel"
+            android:visibility="gone"
+            app:srcCompat="@android:drawable/ic_menu_delete" />
+    </LinearLayout>
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -31,7 +54,7 @@
             android:textSize="14sp"
             android:textStyle="bold" />
 
-        <EditText
+        <com.example.myroutes.KeyboardEditText
             android:id="@+id/workoutName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -62,6 +85,15 @@
         android:layout_height="wrap_content"
         android:gravity="end">
 
+        <Button
+            android:id="@+id/cancel"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:foregroundTint="#FFFFFF"
+            android:text="Clear"
+            android:textColor="@color/colorCancel" />
+
         <Space
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -81,7 +113,7 @@
         <Space
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5" />
+            android:layout_weight="1" />
 
         <Button
             android:id="@id/save"

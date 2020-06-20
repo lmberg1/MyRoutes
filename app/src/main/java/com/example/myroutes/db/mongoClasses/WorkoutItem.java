@@ -57,16 +57,9 @@ public class WorkoutItem {
         return workoutSets;
     }
 
-    static BsonDocument toBsonDocument(final WorkoutItem item) {
-        final BsonDocument asDoc = new BsonDocument();
-        asDoc.put(Fields.USER_ID, new BsonString(item.getUser_id()));
-        asDoc.put(Fields.WALL_ID, new BsonString(item.getWall_id()));
-        asDoc.put(Fields.WORKOUT_ID, new BsonString(item.getWorkout_id()));
-        asDoc.put(Fields.WORKOUT_NAME, new BsonString(item.getWorkout_name()));
-
+    public BsonArray setsToBson() {
         // Add string list
         BsonArray bsonSets = new BsonArray();
-        List<List<String>> workoutSets = item.getWorkoutSets();
         for (List<String> boulderIds : workoutSets) {
             BsonArray bsonIds = new BsonArray();
             for (String id : boulderIds) {
@@ -74,7 +67,16 @@ public class WorkoutItem {
             }
             bsonSets.add(bsonIds);
         }
-        asDoc.put(Fields.WORKOUT_SETS, bsonSets);
+        return bsonSets;
+    }
+
+    static BsonDocument toBsonDocument(final WorkoutItem item) {
+        final BsonDocument asDoc = new BsonDocument();
+        asDoc.put(Fields.USER_ID, new BsonString(item.getUser_id()));
+        asDoc.put(Fields.WALL_ID, new BsonString(item.getWall_id()));
+        asDoc.put(Fields.WORKOUT_ID, new BsonString(item.getWorkout_id()));
+        asDoc.put(Fields.WORKOUT_NAME, new BsonString(item.getWorkout_name()));
+        asDoc.put(Fields.WORKOUT_SETS, item.setsToBson());
 
         return asDoc;
     }

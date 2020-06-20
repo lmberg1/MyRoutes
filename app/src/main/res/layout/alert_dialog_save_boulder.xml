@@ -60,7 +60,7 @@
             android:textAlignment="center"
             android:textAllCaps="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            android:textColor="#DF3636"
+            android:textColor="@color/colorCancel"
             android:textSize="14sp" />
 
 

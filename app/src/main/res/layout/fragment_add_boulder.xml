@@ -37,9 +37,18 @@
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginRight="16dp"
             android:text="Add Boulders"
             android:textColor="@android:color/primary_text_dark"
             android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/boulderName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/colorAccent"
+            android:textSize="16sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -47,7 +56,7 @@
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/colorPrimary"
-        android:gravity="center_vertical"
+        android:gravity="center_horizontal|center_vertical"
         android:paddingStart="0dp"
         android:paddingEnd="16dp"
         android:transitionName="bottomAppBar"
@@ -80,6 +89,15 @@
             android:text="Save Boulder"
             android:textAllCaps="false"
             android:textSize="12sp" />
+
+        <ImageButton
+            android:id="@+id/deleteBoulder"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_menu_delete"
+            android:tint="@color/colorCancel"
+            android:visibility="visible" />
 
     </LinearLayout>
 

@@ -79,7 +79,7 @@ public class Wall {
         }
     }
 
-    public BoulderItem searchBoulder(String boulder_id) {
+    public BoulderItem searchBoulderId(String boulder_id) {
         Set<String> keys = boulders.keySet();
         for (String key : keys) {
             List<BoulderItem> items = boulders.get(key);

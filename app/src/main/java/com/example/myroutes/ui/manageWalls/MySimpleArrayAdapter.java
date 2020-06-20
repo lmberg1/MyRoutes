@@ -1,6 +1,7 @@
 package com.example.myroutes.ui.manageWalls;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,7 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
     private BiConsumer<WallMetadata, Boolean> onEdit;
     private Consumer<WallMetadata> onDelete;
     private Consumer<WallMetadata> onDeletePermanently;
+    private int defaultPosition = 0;
 
     public MySimpleArrayAdapter(Context context, List<WallMetadata> wallInfo) {
         super(context, 0, wallInfo);
@@ -71,16 +73,17 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
         WallMetadata info = getItem(position);
         if (info == null) return convertView;
 
+        // Put a border around the currently selected wall
         if (info.getWall_id().equals(currentWallId)) {
             convertView.setBackgroundResource(R.drawable.border);
         }
         else {
             convertView.setBackgroundResource(0);
-            //convertView.setBackgroundColor(0xf1f1f1);
         }
 
         TextView txtName = convertView.findViewById(R.id.name);
         TextView txtRole = convertView.findViewById(R.id.role);
+        TextView txtDefault = convertView.findViewById(R.id.defaultTag);
         ImageView share = convertView.findViewById(R.id.shareButton);
         ImageView edit = convertView.findViewById(R.id.editWallInfo);
         share.setOnClickListener(v -> onShareClick(v, position));
@@ -91,6 +94,9 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
                 String.format("(%s)", "owner") : "";
         txtName.setText(info.getWall_name());
         txtRole.setText(role);
+        Log.e("Adapter", String.format("%d %d", position, defaultPosition));
+        txtDefault.setVisibility((position == defaultPosition) ? View.VISIBLE : View.GONE);
+        convertView.findViewById(R.id.emptyText).setVisibility((position == defaultPosition) ? View.VISIBLE : View.GONE);
 
         return convertView;
     }
@@ -114,14 +120,15 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
         if (item == null) return;
 
         // Create AlertDialog and show.
-        final AlertDialog alertDialog = AlertDialogManager.createEditWallDialog(item, context);
+        final AlertDialog alertDialog = AlertDialogManager.createEditWallDialog(item, pos == defaultPosition, context);
         alertDialog.show();
 
         // Get views in the alert dialog
         EditText wallName = alertDialog.findViewById(R.id.wallName);
         Button saveEdit = alertDialog.findViewById(R.id.saveEdit);
         Button deleteWall = alertDialog.findViewById(R.id.deleteWall);
-        CheckBox setDefault = alertDialog.findViewById(R.id.checkBox);
+        CheckBox setDefault = alertDialog.findViewById(R.id.nextButton);
+        Button cancel = alertDialog.findViewById(R.id.cancel);
 
         // Make sure views exist
         assert (wallName != null) && (saveEdit != null) &&
@@ -139,6 +146,7 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
             // Update list adapter data
             item.setWall_name(wallName.getText().toString());
             wallInfo.set(pos, item);
+            if (setDefault.isChecked()) { defaultPosition = pos; }
             notifyDataSetChanged();
 
             // Cancel dialog
@@ -148,11 +156,12 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
             onEdit.accept(item, setDefault.isChecked());
         });
         deleteWall.setOnClickListener(v -> {
-            onDeleteClick(item, alertDialog);
+            onDeleteClick(pos, item, alertDialog);
         });
+        cancel.setOnClickListener(v -> alertDialog.cancel());
     }
 
-    private void onDeleteClick(WallMetadata item, AlertDialog parent) {
+    private void onDeleteClick(int pos, WallMetadata item, AlertDialog parent) {
         final AlertDialog alertDialog = AlertDialogManager.createDeleteWallDialog(item, context);
         alertDialog.show();
 
