@@ -35,9 +35,9 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.myroutes.util.AlertDialogManager;
 import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.mongoClasses.WallDataItem;
+import com.example.myroutes.db.entities.WallDataItem;
 import com.example.myroutes.util.WallDrawingHelper;
-import com.example.myroutes.db.mongoClasses.WallImageItem;
+import com.example.myroutes.db.entities.WallImageItem;
 import com.example.myroutes.ui.manageWalls.SelectFromGalleryUtil;
 import com.ortiz.touchview.TouchImageView;
 

@@ -1,26 +1,19 @@
 package com.example.myroutes;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.core.util.Consumer;
 
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.db.mongoClasses.WorkoutItem;
-import com.example.myroutes.util.WallMetadata;
-import com.google.android.gms.common.util.BiConsumer;
+import com.example.myroutes.db.entities.WorkoutItem;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 // Class to dynamically update list view for search items
 public class WorkoutListAdapter extends ArrayAdapter<WorkoutItem> {

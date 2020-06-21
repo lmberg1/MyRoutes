@@ -1,10 +1,8 @@
 package com.example.myroutes.ui.addBoulder;
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 
 import java.util.ArrayList;
 

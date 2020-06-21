@@ -1,13 +1,12 @@
-package com.example.myroutes.db;
+package com.example.myroutes.db.entities;
 
 import android.graphics.Bitmap;
 import android.graphics.Path;
 
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.db.mongoClasses.WallDataItem;
-import com.example.myroutes.db.mongoClasses.WallImageItem;
-import com.example.myroutes.db.mongoClasses.WorkoutItem;
-import com.google.android.gms.common.util.BiConsumer;
+import com.example.myroutes.db.entities.BoulderItem;
+import com.example.myroutes.db.entities.WallDataItem;
+import com.example.myroutes.db.entities.WallImageItem;
+import com.example.myroutes.db.entities.WorkoutItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;

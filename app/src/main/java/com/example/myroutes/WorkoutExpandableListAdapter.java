@@ -2,32 +2,23 @@ package com.example.myroutes;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
-import android.widget.CheckBox;
-import android.widget.Checkable;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import androidx.core.util.Consumer;
-
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 import com.google.android.gms.common.util.BiConsumer;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import static com.google.android.gms.common.util.WorkSourceUtil.TAG;
-import static com.google.android.gms.common.util.WorkSourceUtil.fromPackage;
 
 public class WorkoutExpandableListAdapter extends BaseExpandableListAdapter {
     public enum Mode {INITIALIZING, UPDATING};

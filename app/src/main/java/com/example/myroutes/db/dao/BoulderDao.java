@@ -6,7 +6,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 import com.mongodb.lang.NonNull;
 
 import java.util.List;
@@ -19,9 +19,6 @@ public interface BoulderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(BoulderItem... items);
-
-    @Query("select exists (select 1 from boulder_table where wall_id = :wall_id)")
-    boolean hasAnyFromWall(@NonNull String wall_id);
 
     @Query("select * from boulder_table where wall_id = :wall_id")
     LiveData<List<BoulderItem>> getAllFromWall(@NonNull String wall_id);

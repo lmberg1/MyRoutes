@@ -1,7 +1,11 @@
-package com.example.myroutes.db.mongoClasses;
+package com.example.myroutes.db.backends;
 
 import android.graphics.BitmapFactory;
-import android.graphics.Path;
+
+import com.example.myroutes.db.entities.BoulderItem;
+import com.example.myroutes.db.entities.WallDataItem;
+import com.example.myroutes.db.entities.WallImageItem;
+import com.example.myroutes.db.entities.WorkoutItem;
 
 import org.bson.BsonArray;
 import org.bson.BsonBinary;
@@ -11,7 +15,6 @@ import org.bson.BsonInt32;
 import org.bson.BsonReader;
 import org.bson.BsonString;
 import org.bson.BsonWriter;
-import org.bson.Document;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;

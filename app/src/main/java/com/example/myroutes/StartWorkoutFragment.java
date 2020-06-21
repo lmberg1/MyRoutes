@@ -7,20 +7,16 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.RadioButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -32,9 +28,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.Wall;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.db.mongoClasses.WorkoutItem;
+import com.example.myroutes.db.entities.Wall;
+import com.example.myroutes.db.entities.BoulderItem;
+import com.example.myroutes.db.entities.WorkoutItem;
 import com.example.myroutes.util.WallDrawingHelper;
 
 import java.util.ArrayList;

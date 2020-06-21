@@ -13,10 +13,11 @@ import com.example.myroutes.db.dao.WallDataDao;
 import com.example.myroutes.db.dao.WallDataRoomDatabase;
 import com.example.myroutes.db.backends.FileService;
 import com.example.myroutes.db.backends.MongoWebservice;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.db.mongoClasses.WallDataItem;
-import com.example.myroutes.db.mongoClasses.WallImageItem;
-import com.example.myroutes.db.mongoClasses.WorkoutItem;
+import com.example.myroutes.db.dao.WorkoutDao;
+import com.example.myroutes.db.entities.BoulderItem;
+import com.example.myroutes.db.entities.WallDataItem;
+import com.example.myroutes.db.entities.WallImageItem;
+import com.example.myroutes.db.entities.WorkoutItem;
 import com.mongodb.stitch.android.core.auth.StitchUser;
 
 import java.lang.ref.WeakReference;
@@ -33,6 +34,7 @@ public class WallDataRepository {
     private WeakReference<Application> application;
     private BoulderDao boulderDao;
     private WallDataDao wallDataDao;
+    private WorkoutDao workoutDao;
 
     // User id
     private String stitchUserId;
@@ -42,6 +44,7 @@ public class WallDataRepository {
         WallDataRoomDatabase db = WallDataRoomDatabase.getDatabase(application);
         this.boulderDao = db.boulderDao();
         this.wallDataDao = db.wallDataDao();
+        this.workoutDao = db.workoutDao();
     }
 
     String getStitchUserId() {
@@ -152,23 +155,78 @@ public class WallDataRepository {
 
     /*-----------------------------------Handle Workout Data -------------------------------------*/
 
+    private void insertWorkoutsLocal(List<WorkoutItem> workoutItems) {
+        Log.e(TAG, "inserting workouts");
+        WorkoutItem[] itemArray = new WorkoutItem[workoutItems.size()];
+        AsyncTask.execute(() -> workoutDao.insertAll(workoutItems.toArray(itemArray)));
+    }
+
+    private void insertWorkoutLocal(WorkoutItem item) {
+        AsyncTask.execute(() -> workoutDao.insert(item));
+    }
+
+    private void deleteWorkoutsLocal(String wall_id) {
+        AsyncTask.execute(() -> workoutDao.deleteAllFromWall(wall_id));
+    }
+
+    private void deleteWorkoutLocal(String workout_id) {
+        AsyncTask.execute(() -> workoutDao.deleteWorkout(workout_id));
+    }
+
+    LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {
+        MediatorLiveData<Result<List<WorkoutItem>>> result = new MediatorLiveData<>();
+
+        // Try to get from local storage
+        LiveData<List<WorkoutItem>> workouts = workoutDao.getAllFromWall(wall_id);
+
+        result.addSource(workouts, o -> {
+            if (o == null) return;
+            // If the workouts were found, return success
+            if (o.size() != 0) {
+                Log.e(TAG, "fetching workouts");
+                result.setValue(new Result<>(o, Status.SUCCESS));
+            }
+            // Otherwise look for workouts in the mongo database
+            else {
+                Log.e(TAG, "fetching mongo workouts");
+                refreshWorkouts(wall_id, result);
+            }
+            result.removeSource(workouts);
+        });
+
+        return result;
+    }
+
+    void refreshWorkouts(String wall_id, MediatorLiveData<Result<List<WorkoutItem>>> result) {
+        LiveData<Result<List<WorkoutItem>>> workouts = MongoWebservice.getWorkoutsFromMongo(wall_id);
+        result.addSource(workouts, o -> {
+            if (o == null) return;
+            result.setValue(o);
+            result.removeSource(workouts);
+            // Insert items into local repository if query was successful
+            if (o.status == Status.SUCCESS) {
+                insertWorkoutsLocal(o.data);
+            }
+        });
+    }
+
     LiveData<Result<RemoteInsertOneResult>> inserWorkout(WorkoutItem item) {
+        insertWorkoutLocal(item);
         return MongoWebservice.addWorkoutToMongo(item);
     }
 
     LiveData<Result<RemoteUpdateResult>> updateWorkout(WorkoutItem item) {
+        insertWorkoutLocal(item);
         return MongoWebservice.editWorkoutInMongo(item);
     }
 
-    LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {
-        return MongoWebservice.getWorkoutsFromMongo(wall_id);
-    }
-
     LiveData<Result<RemoteDeleteResult>> deleteAllWorkouts(String wall_id) {
+        deleteWorkoutsLocal(wall_id);
         return MongoWebservice.deleteWorkoutsFromMongo(wall_id);
     }
 
     LiveData<Result<RemoteDeleteResult>> deleteWorkout(String wall_id, String workout_id) {
+        deleteWorkoutLocal(workout_id);
         return MongoWebservice.deleteWorkoutFromMongo(wall_id, workout_id);
     }
 

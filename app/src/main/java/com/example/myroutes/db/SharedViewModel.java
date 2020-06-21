@@ -9,10 +9,11 @@ import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myroutes.db.backends.FileService;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.db.mongoClasses.WallDataItem;
-import com.example.myroutes.db.mongoClasses.WallImageItem;
-import com.example.myroutes.db.mongoClasses.WorkoutItem;
+import com.example.myroutes.db.entities.BoulderItem;
+import com.example.myroutes.db.entities.Wall;
+import com.example.myroutes.db.entities.WallDataItem;
+import com.example.myroutes.db.entities.WallImageItem;
+import com.example.myroutes.db.entities.WorkoutItem;
 import com.example.myroutes.util.PreferenceManager;
 import com.example.myroutes.util.WallMetadata;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;

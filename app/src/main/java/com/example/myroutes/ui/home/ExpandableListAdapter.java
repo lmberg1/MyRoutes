@@ -11,7 +11,7 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.TextView;
 
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.R;
 
 public class ExpandableListAdapter extends BaseExpandableListAdapter {

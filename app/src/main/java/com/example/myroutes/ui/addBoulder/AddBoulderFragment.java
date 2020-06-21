@@ -28,12 +28,11 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.example.myroutes.ui.home.HomeFragment;
 import com.example.myroutes.util.AlertDialogManager;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.Wall;
+import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.util.WallDrawingHelper;
 
 import java.util.ArrayList;

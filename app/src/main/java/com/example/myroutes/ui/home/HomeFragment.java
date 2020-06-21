@@ -26,11 +26,10 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.example.myroutes.WorkoutFragment;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.Wall;
+import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.ui.addBoulder.AddBoulderModel;
 import com.example.myroutes.util.WallDrawingHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;

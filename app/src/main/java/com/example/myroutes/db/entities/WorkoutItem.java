@@ -1,24 +1,29 @@
-package com.example.myroutes.db.mongoClasses;
+package com.example.myroutes.db.entities;
+
+import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.TypeConverters;
+
+import com.example.myroutes.db.dao.PointArrayConverter;
+import com.example.myroutes.db.dao.StringArrayConverter;
 
 import org.bson.BsonArray;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonReader;
 import org.bson.BsonString;
-import org.bson.BsonWriter;
-import org.bson.codecs.BsonDocumentCodec;
-import org.bson.codecs.Codec;
-import org.bson.codecs.DecoderContext;
-import org.bson.codecs.EncoderContext;
 
-import java.util.ArrayList;
 import java.util.List;
 
+@Entity(tableName = "workout_table")
 public class WorkoutItem {
+    @PrimaryKey
+    @NonNull
+    @ColumnInfo(name = "workout_id")
+    private final String workout_id;
     private final String user_id;
     private final String wall_id;
-    private final String workout_id;
     private final String workout_name;
+    @TypeConverters({StringArrayConverter.class})
     private final List<List<String>> workoutSets; // List of sets of boulder ids
 
     public WorkoutItem(

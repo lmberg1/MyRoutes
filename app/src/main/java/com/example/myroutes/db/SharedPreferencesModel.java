@@ -6,10 +6,8 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 
-import com.example.myroutes.db.mongoClasses.WallDataItem;
+import com.example.myroutes.db.entities.WallDataItem;
 import com.example.myroutes.util.PreferenceManager;
 import com.example.myroutes.util.WallMetadata;
 

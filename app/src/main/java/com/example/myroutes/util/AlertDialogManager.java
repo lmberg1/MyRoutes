@@ -12,7 +12,7 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 
 public class AlertDialogManager {
 

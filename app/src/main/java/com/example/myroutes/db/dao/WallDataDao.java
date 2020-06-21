@@ -6,7 +6,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
-import com.example.myroutes.db.mongoClasses.WallDataItem;
+import com.example.myroutes.db.entities.WallDataItem;
 import com.mongodb.lang.NonNull;
 
 import java.util.List;

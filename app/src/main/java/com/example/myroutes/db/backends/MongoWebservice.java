@@ -6,11 +6,10 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myroutes.db.Result;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
-import com.example.myroutes.db.mongoClasses.MongoConverters;
-import com.example.myroutes.db.mongoClasses.WallDataItem;
-import com.example.myroutes.db.mongoClasses.WallImageItem;
-import com.example.myroutes.db.mongoClasses.WorkoutItem;
+import com.example.myroutes.db.entities.BoulderItem;
+import com.example.myroutes.db.entities.WallDataItem;
+import com.example.myroutes.db.entities.WallImageItem;
+import com.example.myroutes.db.entities.WorkoutItem;
 import com.google.android.gms.tasks.Task;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Filters;
@@ -32,11 +31,11 @@ import org.bson.conversions.Bson;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.myroutes.db.mongoClasses.MongoConverters.BOULDER_ITEMS_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.MongoConverters.DATABASE;
-import static com.example.myroutes.db.mongoClasses.MongoConverters.WALL_IMAGE_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.MongoConverters.WALL_ITEMS_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.MongoConverters.WORKOUT_COLLECTION;
+import static com.example.myroutes.db.backends.MongoConverters.BOULDER_ITEMS_COLLECTION;
+import static com.example.myroutes.db.backends.MongoConverters.DATABASE;
+import static com.example.myroutes.db.backends.MongoConverters.WALL_IMAGE_COLLECTION;
+import static com.example.myroutes.db.backends.MongoConverters.WALL_ITEMS_COLLECTION;
+import static com.example.myroutes.db.backends.MongoConverters.WORKOUT_COLLECTION;
 
 import static com.example.myroutes.db.SharedViewModel.Status;
 

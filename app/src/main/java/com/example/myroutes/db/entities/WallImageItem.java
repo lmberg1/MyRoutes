@@ -1,17 +1,6 @@
-package com.example.myroutes.db.mongoClasses;
+package com.example.myroutes.db.entities;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import org.bson.BsonBinary;
-import org.bson.BsonDocument;
-import org.bson.BsonReader;
-import org.bson.BsonString;
-import org.bson.BsonWriter;
-import org.bson.codecs.BsonDocumentCodec;
-import org.bson.codecs.Codec;
-import org.bson.codecs.DecoderContext;
-import org.bson.codecs.EncoderContext;
 
 import java.io.ByteArrayOutputStream;
 

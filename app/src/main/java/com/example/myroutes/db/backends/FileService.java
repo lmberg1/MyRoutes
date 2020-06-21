@@ -9,7 +9,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myroutes.db.Result;
-import com.example.myroutes.db.mongoClasses.WallImageItem;
+import com.example.myroutes.db.entities.WallImageItem;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
 

@@ -1,4 +1,4 @@
-package com.example.myroutes.db.mongoClasses;
+package com.example.myroutes.db.entities;
 
 import android.graphics.Path;
 

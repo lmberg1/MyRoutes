@@ -1,9 +1,7 @@
 package com.example.myroutes;
 
-import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.LayerDrawable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,12 +11,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.myroutes.db.mongoClasses.BoulderItem;
+import com.example.myroutes.db.entities.BoulderItem;
 
 import java.util.List;
 import java.util.Locale;
-
-import static com.google.android.gms.common.util.WorkSourceUtil.TAG;
 
 public class WorkoutProgressAdapter extends RecyclerView.Adapter<WorkoutProgressAdapter.MyViewHolder> {
 
