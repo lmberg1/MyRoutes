@@ -148,7 +148,7 @@ public class ManageWallsFragment extends Fragment {
         connectToWall.setOnClickListener(v -> {
             // Handle errors
             String wallId = wallIdText.getText().toString();
-            if (model.hasWall_id(wallId)) {
+            if (model.hasWall(wallId)) {
                 String error = "You already have this wall saved";
                 wallIdText.setError(error);
                 return;
@@ -192,7 +192,7 @@ public class ManageWallsFragment extends Fragment {
     private ArrayList<WallMetadata> getWallMetadata() {
         ArrayList<WallMetadata> wall_info = new ArrayList<>();
         String default_id = model.getDefault_id();
-        Set<String> wall_ids = model.getWall_ids().getValue();
+        Set<String> wall_ids = model.getWall_ids();
         assert wall_ids != null;
         // Add default wall id first so it's at the start of the list
         if (default_id != null) {
@@ -262,7 +262,7 @@ public class ManageWallsFragment extends Fragment {
 
     private void onSaveWallEdits(WallMetadata item, boolean isDefault) {
         // Update wall name
-        model.setWall_metadata(item);
+        model.updateWall(item);
 
         // Update default wall
         if (isDefault) {

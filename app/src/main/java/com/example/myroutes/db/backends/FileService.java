@@ -9,7 +9,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myroutes.db.Result;
-import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
@@ -17,6 +16,8 @@ import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+
+import static com.example.myroutes.db.SharedViewModel.Status;
 
 public class FileService {
     private static final String TAG = "FileService";
@@ -34,7 +35,7 @@ public class FileService {
         MutableLiveData<Result<WallImageItem>> result = new MutableLiveData<>();
 
         if (!hasImageFile(wall_id, application)) {
-            result.setValue(new Result.Error<>(SharedViewModel.Status.NOT_FOUND));
+            result.setValue(new Result<>(null, Status.NOT_FOUND));
             return result;
         }
 
@@ -46,13 +47,13 @@ public class FileService {
                 FileInputStream fis = application.openFileInput(fname);
                 Bitmap bitmap = BitmapFactory.decodeStream(fis);
                 WallImageItem item = new WallImageItem("", wall_id, bitmap);
-                result.postValue(new Result.Success<>(item));
+                result.postValue(new Result<>(item, Status.SUCCESS));
                 Log.e(TAG, "Successful read of file " + fname);
             }
             catch (Exception e) {
                 Log.e("frag", "Failed to read file", e);
                 deleteImageFromDevice(wall_id, application);
-                result.postValue(new Result.Error<>(SharedViewModel.Status.FAILURE));
+                result.postValue(new Result<>(null, Status.FAILURE));
             }
         }).start();
 
@@ -73,13 +74,13 @@ public class FileService {
                 item.getBitmap().compress(Bitmap.CompressFormat.PNG, 100, fos);
                 fos.flush();
                 fos.close();
-                result.postValue(new Result.Success<>(null));
+                result.postValue(new Result<>(null, Status.SUCCESS));
                 Log.e(TAG, "Successful write of file " + fname);
             }
             catch (Exception e) {
                 Log.e(TAG, "Error writing image file", e);
                 file.delete();
-                result.postValue(new Result.Error<>(SharedViewModel.Status.FAILURE));
+                result.postValue(new Result<>(null, Status.FAILURE));
             }
         }).start();
 
@@ -95,8 +96,9 @@ public class FileService {
         File file = new File(application.getFilesDir(), fname);
         boolean deleted = file.delete();
 
-        result.setValue((deleted) ? new Result.Success<>(null) :
-                new Result.Error<>(SharedViewModel.Status.FAILURE));
+        result.setValue((deleted) ?
+                new Result<>(null, Status.SUCCESS) :
+                new Result<>(null, Status.FAILURE));
 
         return result;
     }

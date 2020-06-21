@@ -5,11 +5,8 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.myroutes.R;
-import com.example.myroutes.WorkoutProgressAdapter;
-import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.db.Result;
-import com.example.myroutes.db.SharedViewModel;
+import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.db.mongoClasses.MongoConverters;
 import com.example.myroutes.db.mongoClasses.WallDataItem;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
@@ -41,10 +38,12 @@ import static com.example.myroutes.db.mongoClasses.MongoConverters.WALL_IMAGE_CO
 import static com.example.myroutes.db.mongoClasses.MongoConverters.WALL_ITEMS_COLLECTION;
 import static com.example.myroutes.db.mongoClasses.MongoConverters.WORKOUT_COLLECTION;
 
+import static com.example.myroutes.db.SharedViewModel.Status;
+
 public class MongoWebservice {
     private static final String TAG = "MongoWebService";
 
-    private enum MongoTask {ADD, GET, DELETE};
+    private enum MongoTask {ADD, GET, DELETE}
 
     private static RemoteMongoCollection<WallDataItem> wallCollection;
     private static RemoteMongoCollection<WallImageItem> wallImageCollection;
@@ -57,14 +56,14 @@ public class MongoWebservice {
             final MutableLiveData<Result<T>> mongoResult = new MutableLiveData<>();
             task.addOnSuccessListener(item -> {
                 if ((item == null) && (taskType == MongoTask.GET)) {
-                    mongoResult.setValue(new Result.Error<>(SharedViewModel.Status.NOT_FOUND));
+                    mongoResult.setValue(new Result<>(null, Status.NOT_FOUND));
                 } else {
-                    mongoResult.setValue(new Result.Success<>(item));
+                    mongoResult.setValue(new Result<>(item, Status.SUCCESS));
                 }
             })
                     .addOnFailureListener(e -> {
                         Log.e(TAG, errorMsg, e);
-                        mongoResult.setValue(new Result.Error<>(SharedViewModel.Status.FAILURE));
+                        mongoResult.setValue(new Result<>(null, Status.FAILURE));
                     });
             return mongoResult;
         }

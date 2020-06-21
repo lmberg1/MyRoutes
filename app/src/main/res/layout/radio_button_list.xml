@@ -16,7 +16,7 @@
         android:text="V0"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton2"
@@ -28,7 +28,7 @@
         android:text="V1"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton3"
@@ -40,7 +40,7 @@
         android:text="V2"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton4"
@@ -52,7 +52,7 @@
         android:text="V3"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton5"
@@ -64,7 +64,7 @@
         android:text="V4"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton6"
@@ -76,7 +76,7 @@
         android:text="V5"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton7"
@@ -88,7 +88,7 @@
         android:text="V6"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton8"
@@ -100,7 +100,7 @@
         android:text="V7"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton9"
@@ -112,7 +112,7 @@
         android:text="V8"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton10"
@@ -124,7 +124,7 @@
         android:text="V9"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <RadioButton
         android:id="@+id/gradeButton11"
@@ -135,6 +135,6 @@
         android:text="V10"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
 </RadioGroup>

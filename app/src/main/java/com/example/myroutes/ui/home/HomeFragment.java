@@ -177,7 +177,7 @@ public class HomeFragment extends Fragment {
 
         // Called when new grade button is clicked
         gradeButtonGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            RadioButton button = (RadioButton) group.findViewById(checkedId);
+            RadioButton button = group.findViewById(checkedId);
             String grade = button.getText().toString();
             // Show the first boulder of that grade
             if (!grade.equals(fragmentModel.getGrade())) {

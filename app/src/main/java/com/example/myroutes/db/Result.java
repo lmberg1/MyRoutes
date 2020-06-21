@@ -1,31 +1,13 @@
 package com.example.myroutes.db;
 
-public abstract class Result<T> {
+import com.example.myroutes.db.SharedViewModel.Status;
 
-    private Result() {
-    }
+public class Result<T> {
+    public T data;
+    public Status status;
 
-    public final static class Success<T> extends Result<T> {
-        private T result;
-
-        public Success(T t) {
-            this.result = t;
-        }
-
-        public T getResult() {
-            return result;
-        }
-    }
-
-    public final static class Error<T> extends Result<T> {
-        private SharedViewModel.Status error;
-
-        public Error(SharedViewModel.Status error) {
-            this.error = error;
-        }
-
-        public SharedViewModel.Status getError() {
-            return error;
-        }
+    public Result(T data, Status status) {
+        this.data = data;
+        this.status = status;
     }
 }

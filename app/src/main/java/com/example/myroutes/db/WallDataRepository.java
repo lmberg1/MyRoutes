@@ -56,12 +56,14 @@ public class WallDataRepository {
         mediator.addSource(result, o -> {
             if (o == null) {
                 mediator.setValue(Status.LOADING);
-            } else if (o instanceof Result.Error) {
-                mediator.setValue(((Result.Error<StitchUser>) o).getError());
-            } else if (o instanceof Result.Success) {
-                StitchUser user = ((Result.Success<StitchUser>) o).getResult();
+            }
+            else if (o.status == Status.SUCCESS) {
+                StitchUser user = o.data;
                 this.stitchUserId = user.getId();
                 mediator.setValue(Status.SUCCESS);
+            }
+            else {
+                mediator.setValue(o.status);
             }
         });
         return mediator;
@@ -98,7 +100,7 @@ public class WallDataRepository {
             // If the boulders were found, return success
             if (o.size() != 0) {
                 Log.e(TAG, "fetching boulders");
-                result.setValue(new Result.Success<>(o));
+                result.setValue(new Result<>(o, Status.SUCCESS));
             }
             // Otherwise look for the boulder in the mongo database
             else {
@@ -118,8 +120,8 @@ public class WallDataRepository {
             result.setValue(o);
             result.removeSource(boulders);
             // Insert items into local repository if query was successful
-            if (o instanceof Result.Success) {
-                insertBouldersLocal(((Result.Success<List<BoulderItem>>) o).getResult());
+            if (o.status == Status.SUCCESS) {
+                insertBouldersLocal(o.data);
             }
         });
     }
@@ -187,7 +189,7 @@ public class WallDataRepository {
         result.addSource(wallData, o -> {
             if (o != null) {
                 Log.e(TAG, "fetching wall");
-                result.setValue(new Result.Success<>(o));
+                result.setValue(new Result<>(o, Status.SUCCESS));
             }
             // Otherwise look for the boulder in the mongo database
             else {
@@ -207,8 +209,8 @@ public class WallDataRepository {
             result.setValue(o1);
             result.removeSource(mongoWallData);
             // Write wall data to device if query was successful
-            if (o1 instanceof Result.Success) {
-                insertWallLocal(((Result.Success<WallDataItem>) o1).getResult());
+            if (o1.status == Status.SUCCESS) {
+                insertWallLocal(o1.data);
             }
         });
     }
@@ -242,8 +244,8 @@ public class WallDataRepository {
         LiveData<Result<WallImageItem>> image = MongoWebservice.getImageFromMongo(wall_id);
         MediatorLiveData<?> mediator = new MediatorLiveData<>();
         mediator.addSource(image, o -> {
-            if (o instanceof Result.Success) {
-                FileService.writeImageToDevice(((Result.Success<WallImageItem>) o).getResult(), app);
+            if (o.status == Status.SUCCESS) {
+                FileService.writeImageToDevice(o.data, app);
             }
         });
 
