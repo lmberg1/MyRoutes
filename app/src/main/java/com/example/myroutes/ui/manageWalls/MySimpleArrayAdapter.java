@@ -25,6 +25,7 @@ import java.util.List;
 
 // Class to dynamically update list view for search items
 public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
+    private static final String TAG = "MySimpleArrayAdapter";
     private final Context context;
     private List<WallMetadata> wallInfo;
     private String currentWallId;
@@ -46,6 +47,7 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
 
     public void setCurrentId(String id) {
         this.currentWallId = id;
+        Log.e(TAG, "hello "+ id);
         notifyDataSetChanged();
     }
 
@@ -94,7 +96,6 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
                 String.format("(%s)", "owner") : "";
         txtName.setText(info.getWall_name());
         txtRole.setText(role);
-        Log.e("Adapter", String.format("%d %d", position, defaultPosition));
         txtDefault.setVisibility((position == defaultPosition) ? View.VISIBLE : View.GONE);
         convertView.findViewById(R.id.emptyText).setVisibility((position == defaultPosition) ? View.VISIBLE : View.GONE);
 

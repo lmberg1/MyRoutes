@@ -10,6 +10,7 @@ import com.example.myroutes.WorkoutProgressAdapter;
 import com.example.myroutes.db.mongoClasses.BoulderItem;
 import com.example.myroutes.db.Result;
 import com.example.myroutes.db.SharedViewModel;
+import com.example.myroutes.db.mongoClasses.MongoConverters;
 import com.example.myroutes.db.mongoClasses.WallDataItem;
 import com.example.myroutes.db.mongoClasses.WallImageItem;
 import com.example.myroutes.db.mongoClasses.WorkoutItem;
@@ -34,14 +35,11 @@ import org.bson.conversions.Bson;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.myroutes.db.mongoClasses.BoulderItem.BOULDER_DATABASE;
-import static com.example.myroutes.db.mongoClasses.BoulderItem.BOULDER_ITEMS_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.WallDataItem.WALL_DATABASE;
-import static com.example.myroutes.db.mongoClasses.WallDataItem.WALL_ITEMS_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.WallImageItem.WALL_IMAGE_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.WallImageItem.WALL_IMAGE_DATABASE;
-import static com.example.myroutes.db.mongoClasses.WorkoutItem.WORKOUT_COLLECTION;
-import static com.example.myroutes.db.mongoClasses.WorkoutItem.WORKOUT_DATABASE;
+import static com.example.myroutes.db.mongoClasses.MongoConverters.BOULDER_ITEMS_COLLECTION;
+import static com.example.myroutes.db.mongoClasses.MongoConverters.DATABASE;
+import static com.example.myroutes.db.mongoClasses.MongoConverters.WALL_IMAGE_COLLECTION;
+import static com.example.myroutes.db.mongoClasses.MongoConverters.WALL_ITEMS_COLLECTION;
+import static com.example.myroutes.db.mongoClasses.MongoConverters.WORKOUT_COLLECTION;
 
 public class MongoWebservice {
     private static final String TAG = "MongoWebService";
@@ -77,7 +75,7 @@ public class MongoWebservice {
     public static LiveData<Result<WallImageItem>> getImageFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = String.format("Failed to load image for wall %s", wall_id);
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         return new MongoHelper<WallImageItem>()
                 .runMongoTask(wallImageCollection.find(filter).first(), MongoTask.GET, errorMsg);
     }
@@ -92,7 +90,7 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteImageFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = "Failed to delete image for wall " + wall_id;
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(wallImageCollection.deleteOne(filter), MongoTask.DELETE, errorMsg);
     }
@@ -102,7 +100,7 @@ public class MongoWebservice {
     public static LiveData<Result<WallDataItem>> getDataFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = String.format("Failed to load data for wall %s", wall_id);
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         return new MongoHelper<WallDataItem>()
                 .runMongoTask(wallCollection.find(filter).first(), MongoTask.GET, errorMsg);
     }
@@ -117,7 +115,7 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteDataFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = "Failed to delete data for wall " + wall_id;
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(wallCollection.deleteOne(filter), MongoTask.DELETE, errorMsg);
     }
@@ -127,7 +125,7 @@ public class MongoWebservice {
     public static LiveData<Result<List<BoulderItem>>> getBouldersFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = String.format("Failed to load boulders for wall %s", wall_id);
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         List<BoulderItem> items = new ArrayList<>();
         return new MongoHelper<List<BoulderItem>>()
                 .runMongoTask(boulderCollection.find(filter).into(items), MongoTask.GET, errorMsg);
@@ -136,13 +134,13 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteUpdateResult>> editBoulderInMongo(BoulderItem item) {
         assert item != null;
         String errorMsg = "Failed to add boulder for wall " + item.getWall_id();
-        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, item.getWall_id()),
-                Filters.eq(BoulderItem.Fields.BOULDER_ID, item.getBoulder_id()));
+        Bson filter = Filters.and(Filters.eq(MongoConverters.Fields.WALL_ID, item.getWall_id()),
+                Filters.eq(MongoConverters.Fields.BOULDER_ID, item.getBoulder_id()));
         BasicDBObject updateQuery = new BasicDBObject();
         updateQuery.append("$set", new BasicDBObject()
-                .append(BoulderItem.Fields.BOULDER_NAME, item.getBoulder_name())
-                .append(BoulderItem.Fields.BOULDER_GRADE, item.getBoulder_grade())
-                .append(BoulderItem.Fields.BOULDER_HOLDS, item.holdsToBson()));
+                .append(MongoConverters.Fields.BOULDER_NAME, item.getBoulder_name())
+                .append(MongoConverters.Fields.BOULDER_GRADE, item.getBoulder_grade())
+                .append(MongoConverters.Fields.BOULDER_HOLDS, item.holdsToBson()));
         return new MongoHelper<RemoteUpdateResult>()
                 .runMongoTask(boulderCollection.updateOne(filter, updateQuery), MongoTask.ADD, errorMsg);
     }
@@ -157,7 +155,7 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteBouldersFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = "Failed to delete boulders for wall " + wall_id;
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(boulderCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
     }
@@ -165,8 +163,8 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteBoulderFromMongo(String wall_id, String boulder_id) {
         assert wall_id != null;
         String errorMsg = "Failed to delete workouts for wall " + wall_id;
-        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, wall_id),
-                Filters.eq(BoulderItem.Fields.BOULDER_ID, boulder_id));
+        Bson filter = Filters.and(Filters.eq(MongoConverters.Fields.WALL_ID, wall_id),
+                Filters.eq(MongoConverters.Fields.BOULDER_ID, boulder_id));
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(boulderCollection.deleteOne(filter), MongoTask.DELETE, errorMsg);
     }
@@ -174,7 +172,7 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteAllUserBouldersFromMongo(String user_id) {
         assert user_id != null;
         String errorMsg = "Failed to delete all boulders";
-        Document filter = new Document(WallImageItem.Fields.USER_ID, user_id);
+        Document filter = new Document(MongoConverters.Fields.USER_ID, user_id);
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(boulderCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
     }
@@ -184,7 +182,7 @@ public class MongoWebservice {
     public static LiveData<Result<List<WorkoutItem>>> getWorkoutsFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = String.format("Failed to load workouts for wall %s", wall_id);
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         List<WorkoutItem> items = new ArrayList<>();
         return new MongoHelper<List<WorkoutItem>>()
                 .runMongoTask(workoutCollection.find(filter).into(items), MongoTask.GET, errorMsg);
@@ -200,12 +198,12 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteUpdateResult>> editWorkoutInMongo(WorkoutItem item) {
         assert item != null;
         String errorMsg = "Failed to add workout for wall " + item.getWall_id();
-        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, item.getWall_id()),
-                Filters.eq(WorkoutItem.Fields.WORKOUT_ID, item.getWorkout_id()));
+        Bson filter = Filters.and(Filters.eq(MongoConverters.Fields.WALL_ID, item.getWall_id()),
+                Filters.eq(MongoConverters.Fields.WORKOUT_ID, item.getWorkout_id()));
         BasicDBObject updateQuery = new BasicDBObject();
         updateQuery.append("$set", new BasicDBObject()
-                .append(WorkoutItem.Fields.WORKOUT_ID, item.getWorkout_name())
-                .append(WorkoutItem.Fields.WORKOUT_SETS, item.setsToBson()));
+                .append(MongoConverters.Fields.WORKOUT_ID, item.getWorkout_name())
+                .append(MongoConverters.Fields.WORKOUT_SETS, item.setsToBson()));
         return new MongoHelper<RemoteUpdateResult>()
                 .runMongoTask(workoutCollection.updateOne(filter, updateQuery), MongoTask.ADD, errorMsg);
     }
@@ -213,7 +211,7 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteWorkoutsFromMongo(String wall_id) {
         assert wall_id != null;
         String errorMsg = "Failed to delete workouts for wall " + wall_id;
-        Document filter = new Document(WallImageItem.Fields.WALL_ID, wall_id);
+        Document filter = new Document(MongoConverters.Fields.WALL_ID, wall_id);
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(workoutCollection.deleteMany(filter), MongoTask.DELETE, errorMsg);
     }
@@ -221,8 +219,8 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteDeleteResult>> deleteWorkoutFromMongo(String wall_id, String workout_id) {
         assert wall_id != null;
         String errorMsg = "Failed to delete workouts for wall " + wall_id;
-        Bson filter = Filters.and(Filters.eq(WallImageItem.Fields.WALL_ID, wall_id),
-                Filters.eq(WorkoutItem.Fields.WORKOUT_ID, workout_id));
+        Bson filter = Filters.and(Filters.eq(MongoConverters.Fields.WALL_ID, wall_id),
+                Filters.eq(MongoConverters.Fields.WORKOUT_ID, workout_id));
         return new MongoHelper<RemoteDeleteResult>()
                 .runMongoTask(workoutCollection.deleteOne(filter), MongoTask.DELETE, errorMsg);
     }
@@ -235,32 +233,32 @@ public class MongoWebservice {
         RemoteMongoClient mongoClient = client.getServiceClient(RemoteMongoClient.factory, "mongodb-atlas");
 
         // Initialize wall collection
-        wallCollection = mongoClient.getDatabase(WALL_DATABASE)
+        wallCollection = mongoClient.getDatabase(DATABASE)
                 .getCollection(WALL_ITEMS_COLLECTION, WallDataItem.class)
                 .withCodecRegistry(CodecRegistries.fromRegistries(
                         BsonUtils.DEFAULT_CODEC_REGISTRY,
-                        CodecRegistries.fromCodecs(WallDataItem.codec)));
+                        CodecRegistries.fromCodecs(MongoConverters.wallDataItemCodec)));
 
         // Initialize wall image collection
-        wallImageCollection = mongoClient.getDatabase(WALL_IMAGE_DATABASE)
+        wallImageCollection = mongoClient.getDatabase(DATABASE)
                 .getCollection(WALL_IMAGE_COLLECTION, WallImageItem.class)
                 .withCodecRegistry(CodecRegistries.fromRegistries(
                         BsonUtils.DEFAULT_CODEC_REGISTRY,
-                        CodecRegistries.fromCodecs(WallImageItem.codec)));
+                        CodecRegistries.fromCodecs(MongoConverters.wallImageCodec)));
 
         // Initialize boulder collection
-        boulderCollection = mongoClient.getDatabase(BOULDER_DATABASE)
+        boulderCollection = mongoClient.getDatabase(DATABASE)
                 .getCollection(BOULDER_ITEMS_COLLECTION, BoulderItem.class)
                 .withCodecRegistry(CodecRegistries.fromRegistries(
                         BsonUtils.DEFAULT_CODEC_REGISTRY,
-                        CodecRegistries.fromCodecs(BoulderItem.codec)));
+                        CodecRegistries.fromCodecs(MongoConverters.boulderItemCodec)));
 
         // Initialize workout collection
-        workoutCollection = mongoClient.getDatabase(WORKOUT_DATABASE)
+        workoutCollection = mongoClient.getDatabase(DATABASE)
                 .getCollection(WORKOUT_COLLECTION, WorkoutItem.class)
                 .withCodecRegistry(CodecRegistries.fromRegistries(
                         BsonUtils.DEFAULT_CODEC_REGISTRY,
-                        CodecRegistries.fromCodecs(WorkoutItem.codec)));
+                        CodecRegistries.fromCodecs(MongoConverters.workoutItemCodec)));
 
         // Authenticate with MongoDB
         Document usernameAuth = new Document("username", username);

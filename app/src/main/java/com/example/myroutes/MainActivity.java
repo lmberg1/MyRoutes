@@ -54,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
             model.setUsername(username);
         }
 
+        username = "ccb33888";
+
         // Try to log user in with their username
         model.setStitchUser(username).observe(this, user -> {
             if (user == null) return;

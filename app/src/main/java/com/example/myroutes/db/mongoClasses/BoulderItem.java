@@ -1,27 +1,34 @@
 package com.example.myroutes.db.mongoClasses;
 
+import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.TypeConverters;
+
+import com.example.myroutes.db.dao.IntegerArrayConverter;
+
 import org.bson.BsonArray;
-import org.bson.BsonDocument;
 import org.bson.BsonInt32;
-import org.bson.BsonReader;
-import org.bson.BsonString;
-import org.bson.BsonWriter;
-import org.bson.codecs.BsonDocumentCodec;
-import org.bson.codecs.Codec;
-import org.bson.codecs.DecoderContext;
-import org.bson.codecs.EncoderContext;
 
 import java.util.ArrayList;
 
+@Entity(tableName = "boulder_table")
 public class BoulderItem {
-    public static final String BOULDER_DATABASE = "myRoutesApp";
-    public static final String BOULDER_ITEMS_COLLECTION = "boulder-data";
-
-    private final String wall_id;
+    @PrimaryKey
+    @NonNull
+    @ColumnInfo(name = "boulder_id")
     private final String boulder_id;
+
+    @ColumnInfo(name = "wall_id")
+    private final String wall_id;
+    @ColumnInfo(name = "grade")
     private final String boulder_grade;
+
     private final String user_id;
     private final String boulder_name;
+
+    @TypeConverters({IntegerArrayConverter.class})
     private final ArrayList<Integer> boulder_holds;
 
     public BoulderItem(
@@ -70,72 +77,5 @@ public class BoulderItem {
         }
         return holds;
     }
-
-    static BsonDocument toBsonDocument(final BoulderItem item) {
-        final BsonDocument asDoc = new BsonDocument();
-        asDoc.put(Fields.USER_ID, new BsonString(item.getUser_id()));
-        asDoc.put(Fields.WALL_ID, new BsonString(item.getWall_id()));
-        asDoc.put(Fields.BOULDER_ID, new BsonString(item.getBoulder_id()));
-        asDoc.put(Fields.BOULDER_NAME, new BsonString(item.getBoulder_name()));
-        asDoc.put(Fields.BOULDER_GRADE, new BsonString(item.getBoulder_grade()));
-
-        // Add integer array
-        BsonArray holds = new BsonArray();
-        ArrayList<Integer> holdList = item.getBoulder_holds();
-        for (int ind : holdList) {
-            holds.add(new BsonInt32(ind));
-        }
-        asDoc.put(Fields.BOULDER_HOLDS, holds);
-
-        return asDoc;
-    }
-
-    static BoulderItem fromBsonDocument(final BsonDocument doc) {
-        // Get integer list
-        ArrayList<Integer> holdList = new ArrayList<>();
-        BsonArray holdArr = doc.getArray(Fields.BOULDER_HOLDS);
-        for (int i = 0; i < holdArr.size(); i++) {
-            holdList.add(((BsonInt32) holdArr.get(i)).getValue());
-        }
-
-        return new BoulderItem(
-                doc.getString(Fields.USER_ID).getValue(),
-                doc.getString(Fields.WALL_ID).getValue(),
-                doc.getString(Fields.BOULDER_ID).getValue(),
-                doc.getString(Fields.BOULDER_NAME).getValue(),
-                doc.getString(Fields.BOULDER_GRADE).getValue(),
-                holdList
-        );
-    }
-
-    public static final class Fields {
-        public static final String USER_ID = "user_id";
-        public static final String WALL_ID = "wall_id";
-        public static final String BOULDER_ID = "boulder_id";
-        public static final String BOULDER_NAME = "boulder_name";
-        public static final String BOULDER_GRADE = "boulder_grade";
-        public static final String BOULDER_HOLDS = "boulder_holds";
-    }
-
-    public static final Codec<BoulderItem> codec = new Codec<BoulderItem>() {
-
-        @Override
-        public void encode(
-                final BsonWriter writer, final BoulderItem value, final EncoderContext encoderContext) {
-            new BsonDocumentCodec().encode(writer, toBsonDocument(value), encoderContext);
-        }
-
-        @Override
-        public Class<BoulderItem> getEncoderClass() {
-            return BoulderItem.class;
-        }
-
-        @Override
-        public BoulderItem decode(
-                final BsonReader reader, final DecoderContext decoderContext) {
-            final BsonDocument document = (new BsonDocumentCodec()).decode(reader, decoderContext);
-            return fromBsonDocument(document);
-        }
-    };
 }
 

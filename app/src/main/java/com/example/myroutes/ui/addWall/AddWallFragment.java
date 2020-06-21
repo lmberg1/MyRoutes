@@ -270,7 +270,7 @@ public class AddWallFragment extends Fragment {
             // Create new objects to add to database
             String wall_id = UUID.randomUUID().toString().substring(0, 6);
             String stitchId = model.getStitchUserId();
-            WallDataItem dataItem = new WallDataItem(stitchId, wall_id, wallName, fragmentModel.getPoints(), fragmentModel.getPaths());
+            WallDataItem dataItem = new WallDataItem(stitchId, wall_id, wallName, fragmentModel.getPoints());
             WallImageItem imageItem = new WallImageItem(stitchId, wall_id, imgBitmap);
 
             // Save new wall
