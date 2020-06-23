@@ -1,4 +1,4 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import androidx.core.util.Consumer;
 
+import com.example.myroutes.R;
 import com.example.myroutes.db.entities.BoulderItem;
 import com.google.android.gms.common.util.BiConsumer;
 

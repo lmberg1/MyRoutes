@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -51,6 +52,14 @@ public class ManageWallsFragment extends Fragment {
     private ListView listView;
     private MySimpleArrayAdapter adapter;
     private View currentSelectedItem;
+
+    private static final class MESSAGE {
+        static final String ALREADY_SAVED = "You already have this wall saved";
+        static final String WALL_ID_LENGTH = "Wall ids are 6 characters long";
+        static final String DOWNLOAD_FAILURE = "Unable to add wall. Make sure you are connected to internet.";
+        static final String DOWNLOAD_NOT_FOUND = "Unable to add wall. There is no wall with that wall id.";
+        static final String DOWNLOAD_SUCCESS = "Saved new wall!";
+    }
 
     @Override
     public View onCreateView(
@@ -147,44 +156,57 @@ public class ManageWallsFragment extends Fragment {
         // Connect to wall
         connectToWall.setOnClickListener(v -> {
             // Handle errors
-            String wallId = wallIdText.getText().toString();
-            if (model.hasWall(wallId)) {
-                String error = "You already have this wall saved";
-                wallIdText.setError(error);
-                return;
-            }
-            else if (wallId.length() != 6) {
-                String error = "Wall ids are 6 characters long";
-                wallIdText.setError(error);
-                return;
-            }
+            if (checkForWallIdError(wallIdText)) return;
 
             // Close the alert dialog
             alertDialog.cancel();
 
             // Try to download the wall
+            String wallId = wallIdText.getText().toString();
             model.downloadWall(wallId).observe(activity, item -> {
                 if (item == null || item == SharedViewModel.Status.LOADING) { return; }
-                if (item == SharedViewModel.Status.FAILURE) {
-                    Toast.makeText(activity.getApplicationContext(),
-                            "Unable to add wall. Make sure you are connected to internet.",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (item == SharedViewModel.Status.NOT_FOUND) {
-                    Toast.makeText(activity.getApplicationContext(),
-                            "Unable to add wall. There is no wall with that wall id.",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
+                // Display messages to notify is download was successful or not
+                displayMessage(item, activity.getApplicationContext());
 
-                Toast.makeText(activity.getApplicationContext(),
-                        "Saved new wall!", Toast.LENGTH_SHORT).show();
-
-                WallMetadata metadata = model.getWall_metadata(wallId);
-                if (metadata != null) { adapter.add(metadata); }
+                // Update list of walls
+                if (item == SharedViewModel.Status.SUCCESS) {
+                    WallMetadata metadata = model.getWall_metadata(wallId);
+                    if (metadata != null) {
+                        adapter.add(metadata);
+                    }
+                }
             });
         });
+    }
+
+    private boolean checkForWallIdError(EditText editText) {
+        String wallId = editText.getText().toString();
+        if (wallId.length() != 6) {
+            editText.setError(MESSAGE.WALL_ID_LENGTH);
+            return true;
+        }
+        if (model.hasWall(wallId)) {
+            editText.setError(MESSAGE.ALREADY_SAVED);
+            return true;
+        }
+        return false;
+    }
+
+    private void displayMessage(SharedViewModel.Status status, Context context) {
+        String message = null;
+        switch (status) {
+            case SUCCESS:
+                message = MESSAGE.DOWNLOAD_SUCCESS;
+                break;
+            case NOT_FOUND:
+                message = MESSAGE.DOWNLOAD_NOT_FOUND;
+                break;
+            case FAILURE:
+                message = MESSAGE.DOWNLOAD_FAILURE;
+        }
+        if (message != null && context != null) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
     }
 
     /*-----------------------------------Handle List Of Walls-------------------------------------*/
@@ -214,27 +236,28 @@ public class ManageWallsFragment extends Fragment {
         adapter.setOnDelete(this::onDeleteWall);
         adapter.setOnDeletePermanently(this::onDeleteWallPermanently);
         adapter.setOnEdit(this::onSaveWallEdits);
-
         listView.setAdapter(adapter);
 
         // Allow user to change current wall by clicking on list item
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            WallMetadata info = adapter.getItem(position);
-            if (info == null) { return; }
-            // This wall is already selected
-            if (info.getWall_id().equals(currentWallId)) { return; }
+        listView.setOnItemClickListener(this::onClickListItem);
+    }
 
-            // Make sure to close previously selected view if it exists
-            if ((currentSelectedItem != null) && (currentSelectedItem != view)) {
-                currentSelectedItem.findViewById(R.id.goToWallButton).setVisibility(View.GONE);
-            }
-            currentSelectedItem = view;
+    private void onClickListItem(AdapterView<?> parent, View view, int position, long id) {
+        WallMetadata info = adapter.getItem(position);
+        if (info == null) { return; }
+        // This wall is already selected
+        if (info.getWall_id().equals(currentWallId)) { return; }
 
-            // Animate option to go to wall
-            ImageView goToWall = view.findViewById(R.id.goToWallButton);
-            goToWall.setVisibility((goToWall.getVisibility() == View.GONE) ? View.VISIBLE : View.GONE);
-            goToWall.setOnClickListener(v -> onUpdateWall(info));
-        });
+        // Make sure to close previously selected view if it exists
+        if ((currentSelectedItem != null) && (currentSelectedItem != view)) {
+            currentSelectedItem.findViewById(R.id.goToWallButton).setVisibility(View.GONE);
+        }
+        currentSelectedItem = view;
+
+        // Animate option to go to wall
+        ImageView goToWall = view.findViewById(R.id.goToWallButton);
+        goToWall.setVisibility((goToWall.getVisibility() == View.GONE) ? View.VISIBLE : View.GONE);
+        goToWall.setOnClickListener(v -> onUpdateWall(info));
     }
 
     /*--------------------------------Callbacks for list items------------------------------------*/
@@ -269,6 +292,8 @@ public class ManageWallsFragment extends Fragment {
             model.setDefault_id(item.getWall_id());
         }
     }
+
+    /*-----------------------------------------Clean Up-------------------------------------------*/
 
     @Override
     public void onDestroy() {

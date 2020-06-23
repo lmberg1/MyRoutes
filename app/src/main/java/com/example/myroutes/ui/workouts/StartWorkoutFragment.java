@@ -1,4 +1,4 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -7,9 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -28,6 +26,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.db.entities.BoulderItem;
@@ -107,25 +106,26 @@ public class StartWorkoutFragment extends Fragment {
         if (this.workoutItem == null) {
             return;
         }
-        // Get boulderItems from the boulder_ids in the workoutItem
-        boulderSets = wall.workoutToBoulders(workoutItem);
-        // Setup the view
-        nBoulders = workoutItem.getBoulderCount();
+        // Initialize wall variables
+        this.boulderSets = wall.workoutToBoulders(workoutItem);
+        this.paths = wall.getPaths();
+        this.imgBitmap = wall.getBitmap();
+        this.nBoulders = workoutItem.getBoulderCount();
+        // Set up the view
         setupView(view);
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private void setupView(View view) {
-        // Get hold paths of the current wall
-        paths = wall.getPaths();
-        imgBitmap = wall.getBitmap();
+        // Set title
+        TextView wallName = view.findViewById(R.id.wallName);
+        wallName.setText(workoutItem.getWorkout_name());
 
         // Handle back navigation
         ImageView backButton = view.findViewById(R.id.backButton);
         backButton.setOnClickListener(this::goToWorkoutFragment);
 
         // Get views
-        TextView wallName = view.findViewById(R.id.wallName);
         progressView = view.findViewById(R.id.progressView);
         imageView = view.findViewById(R.id.imageView2);
         boulderName = view.findViewById(R.id.boulderName);
@@ -133,30 +133,17 @@ public class StartWorkoutFragment extends Fragment {
         dropdownLayout = view.findViewById(R.id.dropdownLayout);
         nextButton = view.findViewById(R.id.nextButton);
         continueButton = view.findViewById(R.id.continueButton);
-
-        // Set text views
-        wallName.setText(workoutItem.getWorkout_name());
-        boulderName.setText(String.format(Locale.US, "%d Total Sets", boulderSets.size()));
-
-        // Set up recycler view
+        listView = view.findViewById(R.id.expandableListView);
         recyclerView = view.findViewById(R.id.recyclerView);
 
-        // Set up listeners
-        dropdownButton.setOnClickListener(v -> onClickDrowdown());
-        boulderName.setOnClickListener(v -> onClickDrowdown());
+        // Initialize views
+        boulderName.setText(String.format(Locale.US, "%d Total Sets", boulderSets.size()));
+        setupExpandableBoulderList();
+        setupWorkoutProgressView();
 
-        // Setup expandable list view
-        adapter = new StartWorkoutExpandableListAdapter(requireContext(), boulderSets);
-        listView = view.findViewById(R.id.expandableListView);
-        listView.setVisibility(View.GONE);
-        listView.setAdapter(adapter);
-        listView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-            @Override
-            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-                showBoulderIdx(groupPosition, childPosition);
-                return true;
-            }
-        });
+        // Set up listeners
+        dropdownButton.setOnClickListener(v -> onClickDropdown());
+        boulderName.setOnClickListener(v -> onClickDropdown());
 
         // Wait until imageView is setup to allow user interaction
         final ViewTreeObserver vto = imageView.getViewTreeObserver();
@@ -174,8 +161,47 @@ public class StartWorkoutFragment extends Fragment {
                 .navigate(R.id.nav_workouts);
     }
 
+    private void setTransformation() {
+        setupWorkoutProgressView();
+        
+        // Scale imgBitmap to fit on screen
+        int maxHeight = imageView.getMeasuredHeight() - progressView.getMinimumHeight();
+        int maxWidth = imageView.getMeasuredWidth();
+        matrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxHeight, maxWidth);
+        imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, matrix);
+
+        // Update layout params to match image
+        ViewGroup.LayoutParams params = imageView.getLayoutParams();
+        params.width = imgBitmap.getWidth();
+        params.height = imgBitmap.getHeight();
+        listView.getLayoutParams().height = imgBitmap.getHeight() + progressView.getHeight();
+
+        // Set drawing variables
+        drawingBitmap = imgBitmap.copy(Bitmap.Config.ARGB_8888, true);
+        canvas = new Canvas(drawingBitmap);
+        drawPaint = WallDrawingHelper.getDrawPaint();
+        canvasPaint = WallDrawingHelper.getCanvasPaint();
+        imageView.setImageBitmap(drawingBitmap);
+
+        continueButton.setOnClickListener(v -> { onStartWorkout(); });
+    }
+
+    /*-------------------------------Handle Expandable Set List-----------------------------------*/
+
+    // Setup expandable list view
+    private void setupExpandableBoulderList() {
+        adapter = new StartWorkoutExpandableListAdapter(requireContext(), boulderSets);
+        listView.setVisibility(View.GONE);
+        listView.setAdapter(adapter);
+        listView.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
+            // Show the boulder that was clicked
+            showBoulderIdx(groupPosition, childPosition);
+            return true;
+        });
+    }
+
     // Toggle expandable list view dropdown
-    private void onClickDrowdown() {
+    private void onClickDropdown() {
         if (listView.getVisibility() == View.GONE) {
             listView.setVisibility(View.VISIBLE);
             dropdownButton.setImageResource(R.drawable.ic_baseline_expand_less_24);
@@ -192,7 +218,10 @@ public class StartWorkoutFragment extends Fragment {
         }
     }
 
-    private void setTransformation() {
+    /*----------------------------Handle Display of Workout Progress------------------------------*/
+
+    private void setupWorkoutProgressView() {
+        // Set up recycler view
         progressAdapter = new WorkoutProgressAdapter(boulderSets,
                 nBoulders, recyclerView.getWidth());
         LinearLayoutManager mLayoutManager = new LinearLayoutManager(requireContext());
@@ -200,29 +229,7 @@ public class StartWorkoutFragment extends Fragment {
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(progressAdapter);
-
-        // Scale imgBitmap to fit on screen
-        int maxHeight = imageView.getMeasuredHeight() - progressView.getMinimumHeight();
-        int maxWidth = imageView.getMeasuredWidth();
-        matrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxHeight, maxWidth);
-        imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, matrix);
-
-        // Update layout params to match image
-        ViewGroup.LayoutParams params = imageView.getLayoutParams();
-        params.width = imgBitmap.getWidth();
-        params.height = imgBitmap.getHeight();
-
-        // Set drawing variables
-        drawingBitmap = imgBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        canvas = new Canvas(drawingBitmap);
-        drawPaint = WallDrawingHelper.getDrawPaint();
-        canvasPaint = WallDrawingHelper.getCanvasPaint();
-        imageView.setImageBitmap(drawingBitmap);
-
-        continueButton.setOnClickListener(v -> { onStartWorkout(); });
     }
-
-    /*----------------------------Handle Display of Workout Progress------------------------------*/
 
     private void onStartWorkout() {
         // Select first boulder if it exists
@@ -243,12 +250,6 @@ public class StartWorkoutFragment extends Fragment {
     }
 
     private void setSetIdx(int setIdx, int boulderIdx) {
-        // Darken the text color of the current set
-        if ((boulderIdx == 0) && (setIdx < recyclerView.getChildCount())) {
-            TextView setProgressText = recyclerView.getChildAt(setIdx).findViewById(R.id.setTitle);
-            setProgressText.setTextColor(0xFF444444);
-        }
-
         // Workout is done
         if (setIdx == boulderSets.size()) {
             onFinishWorkout();
@@ -292,6 +293,12 @@ public class StartWorkoutFragment extends Fragment {
     /*--------------------------------Handle Displaying Boulders----------------------------------*/
 
     private void setBoulderIdx(int setIdx, int boulderIdx) {
+        // Darken the text color of the current set
+        if ((boulderIdx == 0) && (setIdx < recyclerView.getChildCount())) {
+            TextView setProgressText = recyclerView.getChildAt(setIdx).findViewById(R.id.setTitle);
+            setProgressText.setTextColor(0xFF444444);
+        }
+
         // Get the boulderItem
         BoulderItem boulderItem = boulderSets.get(setIdx).get(boulderIdx);
 
@@ -327,12 +334,6 @@ public class StartWorkoutFragment extends Fragment {
 
         // Draw the route
         drawPaths(route);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        listView = null;
     }
 
     /*-----------------------------------------Helpers--------------------------------------------*/
@@ -371,5 +372,12 @@ public class StartWorkoutFragment extends Fragment {
         }
     }
 
-    /*-----------------------------------------Listeners------------------------------------------*/
+    /*-----------------------------------------Clean Up-------------------------------------------*/
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        listView = null;
+        imgBitmap.recycle();
+    }
 }

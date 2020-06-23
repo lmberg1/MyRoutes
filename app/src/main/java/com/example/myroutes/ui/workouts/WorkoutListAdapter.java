@@ -1,4 +1,4 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import android.content.Context;
 import android.util.Log;
@@ -13,6 +13,7 @@ import android.widget.TextView;
 import androidx.core.util.Consumer;
 import androidx.room.Index;
 
+import com.example.myroutes.R;
 import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.db.entities.WorkoutItem;
 import com.github.mikephil.charting.charts.BarChart;

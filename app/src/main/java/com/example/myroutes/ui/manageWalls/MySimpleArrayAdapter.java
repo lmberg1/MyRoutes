@@ -26,6 +26,10 @@ import java.util.List;
 // Class to dynamically update list view for search items
 public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
     private static final String TAG = "MySimpleArrayAdapter";
+
+    // For deleting a wall item
+    private enum DELETE_TYPE {DELETE_LOCAL, DELETE_PERMANENT}
+
     private final Context context;
     private List<WallMetadata> wallInfo;
     private String currentWallId;
@@ -47,7 +51,6 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
 
     public void setCurrentId(String id) {
         this.currentWallId = id;
-        Log.e(TAG, "hello "+ id);
         notifyDataSetChanged();
     }
 
@@ -133,16 +136,12 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
 
         // Make sure views exist
         assert (wallName != null) && (saveEdit != null) &&
-                (deleteWall != null) && (setDefault != null);
+                (deleteWall != null) && (setDefault != null) && (cancel != null);
 
         // Handle user interactions
         saveEdit.setOnClickListener(v -> {
-            // Make sure name is not empty
-            if (wallName.getText().toString().isEmpty()) {
-                String error = "Your wall must have a name";
-                wallName.setError(error);
-                return;
-            }
+            // Check for errors
+            if (checkWallNameError(wallName)) return;
 
             // Update list adapter data
             item.setWall_name(wallName.getText().toString());
@@ -174,31 +173,42 @@ public class MySimpleArrayAdapter extends ArrayAdapter<WallMetadata> {
         // Make sure views exist
         assert (deleteWall != null) && (deletePermanent != null) && (cancel != null);
 
+        // Helper to delete an item
+        Consumer<DELETE_TYPE> deleteItem = deleteType -> {
+            // Update list adapter
+            wallInfo.remove(item);
+            notifyDataSetChanged();
+            // Close alert dialogs
+            alertDialog.cancel();
+            parent.cancel();
+            // Apply callback function
+            switch (deleteType) {
+                case DELETE_LOCAL:
+                    onDelete.accept(item);
+                    break;
+                case DELETE_PERMANENT:
+                    onDeletePermanently.accept(item);
+            }
+        };
+
         // Handle user interaction
-        deleteWall.setOnClickListener(v -> {
-            // Update list adapter
-            wallInfo.remove(item);
-            notifyDataSetChanged();
-
-            // Close both dialogs
-            alertDialog.cancel();
-            parent.cancel();
-
-            // Apply callback function
-            onDelete.accept(item);
-        });
-        deletePermanent.setOnClickListener(v -> {
-            // Update list adapter
-            wallInfo.remove(item);
-            notifyDataSetChanged();
-
-            // Close both dialogs
-            alertDialog.cancel();
-            parent.cancel();
-
-            // Apply callback function
-            onDeletePermanently.accept(item);
-        });
+        deleteWall.setOnClickListener(v -> deleteItem.accept(DELETE_TYPE.DELETE_LOCAL));
+        deletePermanent.setOnClickListener(v -> deleteItem.accept(DELETE_TYPE.DELETE_PERMANENT));
         cancel.setOnClickListener(v -> alertDialog.cancel());
+    }
+
+    /*-----------------------------------------Helpers--------------------------------------------*/
+
+    private static boolean checkWallNameError(EditText editText) {
+        String wallName = editText.getText().toString();
+        if (wallName.isEmpty()) {
+            editText.setError("Your wall must have a name");
+            return true;
+        }
+        if (wallName.length() > 50) {
+            editText.setError("Wall name must have less than 50 characters");
+            return true;
+        }
+        return false;
     }
 }

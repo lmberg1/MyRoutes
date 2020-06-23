@@ -1,10 +1,9 @@
-package com.example.myroutes;
+package com.example.myroutes.util;
 
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
-import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 

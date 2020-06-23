@@ -7,7 +7,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -33,7 +32,7 @@ import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.ui.addBoulder.AddBoulderModel;
 import com.example.myroutes.util.WallDrawingHelper;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.myroutes.util.WallLoadingErrorHandler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,11 +63,9 @@ public class HomeFragment extends Fragment {
     // Views
     private ImageButton editBoulder;
     private ImageButton dropdownButton;
-    private ImageButton syncBoulders;
     private TextView boulderName;
     private LinearLayout toggleButtonLayout;
     private ImageView imageView;
-    private TextView messageText;
 
     // Grade button variables
     private List<String> allGrades;
@@ -81,6 +78,10 @@ public class HomeFragment extends Fragment {
     // The boulder items in the current selected grade
     private List<BoulderItem> boulderItems;
     private int nBoulders;
+
+    private static final class MESSAGE {
+        static final String NO_BOULDERS = "You don't have any boulders. Add some by going to the \"Add Boulder\" page.";
+    }
 
     @Override
     public View onCreateView(
@@ -107,33 +108,23 @@ public class HomeFragment extends Fragment {
         // Check for changes in the current wall
         final ProgressBar progressBar = view.findViewById(R.id.progressBar_cyclic);
         final TextView messageText = view.findViewById(R.id.error_message);
-        messageText.setVisibility(View.VISIBLE);
         model.getCurrentWallStatus().observe(getViewLifecycleOwner(), result -> {
-            if (result == null) {
-                progressBar.setVisibility(View.GONE);
-                String message = "You have no walls. Go to the Manage Walls panel to add one.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.FAILURE) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. Something went wrong. Make sure you are connected to the internet and try again.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.NOT_FOUND) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. The wall you tried to go to no longer exists.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.LOADING) {
-                progressBar.setVisibility(View.VISIBLE);
-            }
-            else {
-                messageText.setVisibility(View.GONE);
-                progressBar.setVisibility(View.GONE);
-                view.findViewById(R.id.syncBoulders).setVisibility(View.VISIBLE);
-                view.findViewById(R.id.dropdownLayout).setVisibility(View.VISIBLE);
+            // Check if there was an error
+            boolean success = WallLoadingErrorHandler.handleError(result, progressBar, messageText);
+            if (success) {
                 this.wall = model.getWall(model.getCurrentWallId());
                 this.imgBitmap = wall.getBitmap();
+                this.paths = wall.getPaths();
+
+                // Show message if wall has no boulders
+                if (wall.getBoulders().size() == 0) {
+                    TextView noBouldersText = view.findViewById(R.id.noBouldersMessage);
+                    noBouldersText.setText(MESSAGE.NO_BOULDERS);
+                    noBouldersText.setVisibility(View.VISIBLE);
+                }
+                else {
+                    view.findViewById(R.id.dropdownLayout).setVisibility(View.VISIBLE);
+                }
                 setupView(view);
             }
         });
@@ -141,55 +132,36 @@ public class HomeFragment extends Fragment {
 
     @SuppressLint("ClickableViewAccessibility")
     private void setupView(View view) {
-        // Get hold paths of the current wall
-        paths = wall.getPaths();
-
-        // Get views
+        // Set the wall name
         TextView wallName = view.findViewById(R.id.wallName);
         wallName.setText(wall.getName());
-        toggleButtonLayout = view.findViewById(R.id.toggleButtonLayout);
+
+        // Show sync button
+        ImageButton syncBoulders = view.findViewById(R.id.syncBoulders);
+        syncBoulders.setVisibility(View.VISIBLE);
+
+        // Get views
         imageView = view.findViewById(R.id.imageView2);
         editBoulder = view.findViewById(R.id.editButton);
         boulderName = view.findViewById(R.id.boulderName);
         dropdownButton = view.findViewById(R.id.dropdownButton);
-        syncBoulders = view.findViewById(R.id.syncBoulders);
-
-        messageText = view.findViewById(R.id.noBouldersMessage);
-
         gradeButtonGroup = view.findViewById(R.id.gradeButtonGroup);
+        toggleButtonLayout = view.findViewById(R.id.toggleButtonLayout);
         listView = view.findViewById(R.id.expandableListView);
 
-        // Called when new grade button is clicked
-        gradeButtonGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            RadioButton button = group.findViewById(checkedId);
-            String grade = button.getText().toString();
-            // Show the first boulder of that grade
-            if (!grade.equals(fragmentModel.getGrade())) {
-                onClickGradeButton(button.getText().toString(), 0);
-            }
-        });
+        // Set up the expandable list of boulders
+        setupExpandableBoulderList();
+        // Set up list of grade buttons available for this wall
+        setupGradeButtons();
 
         // Set up listeners
+        syncBoulders.setOnClickListener(this::onClickSyncBoulders);
         editBoulder.setOnClickListener(this::onClickEditBoulder);
         dropdownButton.setOnClickListener(v -> onClickDrowdown());
         boulderName.setOnClickListener(v -> onClickDrowdown());
-        imageView.setOnTouchListener(new SwipeListener());
-        syncBoulders.setOnClickListener(this::onClickSyncBoulders);
+        imageView.setOnTouchListener(new SwipeListener(this::handleSwipe));
 
-        // Setup expandable list view
-        adapter = new ExpandableListAdapter(requireContext(), new ArrayList<>(), new HashMap<>());
-        listView.setVisibility(View.GONE);
-        listView.setAdapter(adapter);
-        listView.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
-            // Update the view
-            RadioButton b = (RadioButton) gradeButtonGroup.getChildAt(groupPosition);
-            onClickGradeButton(b.getText().toString(), childPosition);
-            return true;
-        });
-
-        setupBoulderViews();
-
-        // Wait until imageView is setup to allow user interaction
+        // Wait until imageView is set up to allow user interaction
         final ViewTreeObserver vto = imageView.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -198,66 +170,6 @@ public class HomeFragment extends Fragment {
                 setTransformation();
             }
         });
-    }
-
-    private static List<String> getCurrentGrades(Set<String> grades, List<String> allGrades) {
-        List<String> gradeList = new ArrayList<>();
-        for (String s : allGrades) {
-            if (grades.contains(s)) { gradeList.add(s); }
-        }
-        return gradeList;
-    }
-
-    private void setupBoulderViews() {
-        // Figure out which grades this wall has and only show buttons for those grades
-        allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
-        List<String> currentGrades = getCurrentGrades(wall.getBoulders().keySet(), allGrades);
-        for (String s : currentGrades) {
-            int buttonIdx = allGrades.indexOf(s);
-            gradeButtonGroup.getChildAt(buttonIdx).setVisibility(View.VISIBLE);
-        }
-
-        if (wall.getBoulders().size() == 0) {
-            String message = "You don't have any boulders! Add some by clicking the plus button below.";
-            messageText.setText(message);
-            messageText.setVisibility(View.VISIBLE);
-        }
-
-        adapter.setItems(currentGrades, wall.getBoulders());
-        adapter.notifyDataSetChanged();
-    }
-
-    private void onClickSyncBoulders(View v) {
-        model.syncBoulders(wall.getId()).observe(getViewLifecycleOwner(), result -> {
-            if (result == null) { return; }
-            if (result == SharedViewModel.Status.SUCCESS) {
-                //this.wall = model.getWall(wall.getId());
-                setupBoulderViews();
-                onClickGradeButton(fragmentModel.getGrade(), fragmentModel.getBoulderIdx());
-            }
-        });
-    }
-
-    private void onClickEditBoulder(View v) {
-        addBoulderModel.setBoulder(boulderItems.get(fragmentModel.getBoulderIdx()));
-        goToAddBoulderFragment(v);
-    }
-
-    private void goToAddBoulderFragment(View v) {
-        NavHostFragment.findNavController(HomeFragment.this)
-                .navigate(R.id.nav_addBoulder);
-    }
-
-    // Toggle expandable list view dropdown
-    private void onClickDrowdown() {
-        if (listView.getVisibility() == View.GONE) {
-            listView.setVisibility(View.VISIBLE);
-            dropdownButton.setImageResource(R.drawable.ic_baseline_expand_less_24);
-        }
-        else {
-            listView.setVisibility(View.GONE);
-            dropdownButton.setImageResource(R.drawable.ic_baseline_expand_more_24);
-        }
     }
 
     private void setTransformation() {
@@ -271,6 +183,7 @@ public class HomeFragment extends Fragment {
         ViewGroup.LayoutParams params = imageView.getLayoutParams();
         params.width = imgBitmap.getWidth();
         params.height = imgBitmap.getHeight();
+        listView.getLayoutParams().height = imgBitmap.getHeight() + toggleButtonLayout.getHeight();
 
         // Set drawing variables
         drawingBitmap = imgBitmap.copy(Bitmap.Config.ARGB_8888, true);
@@ -289,6 +202,87 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    /*---------------------------------Handle App Bar Buttons-------------------------------------*/
+
+    private void onClickSyncBoulders(View v) {
+        model.syncBoulders(wall.getId()).observe(getViewLifecycleOwner(), result -> {
+            if (result == null) { return; }
+            if (result == SharedViewModel.Status.SUCCESS) {
+                // Update expandable list view
+                HashMap<String, List<BoulderItem>> boulders = wall.getBoulders();
+                List<String> grades = getSortedWallGrades(boulders.keySet());
+                adapter.setItems(grades, boulders);
+                // Update grade button list
+                setupGradeButtons();
+                // Reset the current boulder view
+                onClickGradeButton(fragmentModel.getGrade(), fragmentModel.getBoulderIdx());
+            }
+        });
+    }
+
+    private void onClickEditBoulder(View v) {
+        addBoulderModel.setBoulder(boulderItems.get(fragmentModel.getBoulderIdx()));
+        goToAddBoulderFragment(v);
+    }
+
+    private void goToAddBoulderFragment(View v) {
+        NavHostFragment.findNavController(HomeFragment.this)
+                .navigate(R.id.nav_addBoulder);
+    }
+
+    /*----------------------------Handle Expandable Boulder List----------------------------------*/
+
+    private void setupExpandableBoulderList() {
+        // Initialize expandable list view data
+        HashMap<String, List<BoulderItem>> boulders = wall.getBoulders();
+        List<String> grades = getSortedWallGrades(boulders.keySet());
+
+        // Setup expandable list view
+        adapter = new ExpandableListAdapter(requireContext(), grades, boulders);
+        listView.setVisibility(View.GONE);
+        listView.setAdapter(adapter);
+        listView.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
+            // Show the boulder that was clicked
+            RadioButton b = (RadioButton) gradeButtonGroup.getChildAt(groupPosition);
+            onClickGradeButton(b.getText().toString(), childPosition);
+            return true;
+        });
+    }
+
+    // Toggle expandable list view dropdown
+    private void onClickDrowdown() {
+        if (listView.getVisibility() == View.GONE) {
+            listView.setVisibility(View.VISIBLE);
+            dropdownButton.setImageResource(R.drawable.ic_baseline_expand_less_24);
+        }
+        else {
+            listView.setVisibility(View.GONE);
+            dropdownButton.setImageResource(R.drawable.ic_baseline_expand_more_24);
+        }
+    }
+
+    /*----------------------------Handle Boulder Navigation Buttons-------------------------------*/
+
+    private void setupGradeButtons() {
+        // Figure out which grades this wall has and only show buttons for those grades
+        allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
+        List<String> currentGrades = getSortedWallGrades(wall.getBoulders().keySet());
+        for (String s : currentGrades) {
+            int buttonIdx = allGrades.indexOf(s);
+            gradeButtonGroup.getChildAt(buttonIdx).setVisibility(View.VISIBLE);
+        }
+
+        // Called when new grade button is clicked
+        gradeButtonGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            RadioButton button = group.findViewById(checkedId);
+            String grade = button.getText().toString();
+            // Show the first boulder of that grade
+            if (!grade.equals(fragmentModel.getGrade())) {
+                onClickGradeButton(button.getText().toString(), 0);
+            }
+        });
+    }
+
     private void onClickGradeButton(String currentGrade, int boulderIdx) {
         // Make sure current grade button is selected
         fragmentModel.setGrade(currentGrade);
@@ -303,28 +297,36 @@ public class HomeFragment extends Fragment {
 
         // Get boulders of the selected grade
         boulderItems = wall.getBoulders().get(currentGrade);
+        if (boulderItems == null) { return; }
         nBoulders = boulderItems.size();
 
-        // Create toggle radio buttons to show the index of the current boulder
-        for (int j = 0; j < nBoulders; j++) {
-            RadioButton radioButton = new RadioButton(getContext());
-            radioButton.setId(j);
-            radioButton.setOnClickListener(v -> setBoulderIdx(v.getId()));
-
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            toggleButtonLayout.addView(radioButton, lp);
-        }
+        // Create the toggle buttons
+        setupToggleButtons(nBoulders);
 
         // Draw the selected boulder
         setBoulderIdx(boulderIdx);
     }
 
+    // Create toggle radio buttons to show the index of the current boulder
+    private void setupToggleButtons(int n) {
+        // Dynamically create toggle buttons
+        for (int j = 0; j < n; j++) {
+            RadioButton toggleButton = new RadioButton(getContext());
+            toggleButton.setId(j);
+            toggleButton.setOnClickListener(v -> setBoulderIdx(v.getId()));
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            toggleButtonLayout.addView(toggleButton, lp);
+        }
+    }
+
     private void toggleRadioButton(View view) {
-        // Unselect all other buttons
-        for (int i = 0; i < nBoulders; i++) {
-            RadioButton previous = toggleButtonLayout.findViewById(i);
+       // Deselect previous toggle button
+        int prevIdx = fragmentModel.getBoulderIdx();
+        if (prevIdx < nBoulders) {
+            RadioButton previous = toggleButtonLayout.findViewById(prevIdx);
             previous.setClickable(true);
             previous.setChecked(false);
         }
@@ -334,6 +336,8 @@ public class HomeFragment extends Fragment {
         button.setClickable(false);
         button.setChecked(true);
     }
+
+    /*--------------------------------Handle Displaying Boulder-----------------------------------*/
 
     private void setBoulderIdx(int boulderIdx) {
         // Clear previous drawn paths
@@ -372,80 +376,48 @@ public class HomeFragment extends Fragment {
         imageView.setImageBitmap(drawingBitmap);
     }
 
+    /*-----------------------------------Helper Functions-----------------------------------------*/
+
+    private static List<String> getSortedWallGrades(Set<String> currentGradesSet) {
+        // Get all of the grades that the current wall has in sorted order
+        List<String> currentGrades = new ArrayList<>();
+        for (String s : SharedViewModel.BOULDER_GRADES) {
+            if (currentGradesSet.contains(s)) { currentGrades.add(s); }
+        }
+        return currentGrades;
+    }
+
+    private void handleSwipe(SwipeListener.SWIPE swipe) {
+        // Ignore if no boulders
+        if (boulderItems == null) return;
+        if (boulderItems.isEmpty()) return;
+        // Go to previous or next boulder
+        switch(swipe) {
+            case LEFT:
+                goToNextBoulder();
+                break;
+            case RIGHT:
+                goToPrevBoulder();
+        }
+    }
+
+    private void goToNextBoulder() {
+        int boulderIdx = fragmentModel.getBoulderIdx();
+        int idx = (boulderIdx == 0) ? nBoulders - 1 : boulderIdx - 1;
+        setBoulderIdx(idx);
+    }
+
+    private void goToPrevBoulder() {
+        int boulderIdx = fragmentModel.getBoulderIdx();
+        int idx = (boulderIdx + 1) % nBoulders;
+        setBoulderIdx(idx);
+    }
+
+    /*-----------------------------------------Clean Up-------------------------------------------*/
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         listView = null;
-    }
-
-    /*-----------------------------------------Listeners------------------------------------------*/
-
-    // Detects horizontal swipes to switch between boulders of the same grade
-    private class SwipeListener implements View.OnTouchListener {
-        private float x1,x2;
-        static final int MIN_DISTANCE = 150;
-
-        @SuppressLint("ClickableViewAccessibility")
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            // Ignore touch if there aren't any boulders
-            if (boulderItems == null) return true;
-            if (nBoulders == 0) return true;
-
-            // Look for swipes of size at least MIN_DISTANCE
-            switch(event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    x1 = event.getX();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    x2 = event.getX();
-                    float deltaX = x2 - x1;
-
-                    if (Math.abs(deltaX) > MIN_DISTANCE) {
-                        int boulderIdx = fragmentModel.getBoulderIdx();
-
-                        // Left to Right swipe action (prev boulder)
-                        if (x2 > x1) {
-                            int idx = (boulderIdx == 0) ? nBoulders - 1 : boulderIdx - 1;
-                            setBoulderIdx(idx);
-                        }
-
-                        // Right to left swipe action (next boulder)
-                        else {
-                            int idx = (boulderIdx + 1) % nBoulders;
-                            setBoulderIdx(idx);
-                        }
-
-                    }
-                    break;
-            }
-            return true;
-        }
-    }
-
-    // Detects a vertical swipe to close expandable list view
-    private class VerticalSwipeListener implements View.OnTouchListener {
-        private float y1,y2;
-        static final int MIN_DISTANCE = 150;
-
-        @SuppressLint("ClickableViewAccessibility")
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            // Look for swipes of size at least MIN_DISTANCE
-            switch(event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    y1 = event.getY();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    y2 = event.getY();
-                    float deltaY = y1 - y2;
-                    if (deltaY > MIN_DISTANCE) {
-                        onClickDrowdown();
-                        return true;
-                    }
-                    break;
-            }
-            return false;
-        }
     }
 }

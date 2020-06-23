@@ -3,6 +3,7 @@ package com.example.myroutes.ui.addWall;
 import android.graphics.Bitmap;
 import android.graphics.Path;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -17,7 +18,10 @@ public class AddWallFragmentModel extends ViewModel {
     private ArrayList<Path> paths;
     private ArrayList<ArrayList<Point>> points;
 
-    public AddWallFragmentModel() { }
+    public AddWallFragmentModel() {
+        this.paths = new ArrayList<>();
+        this.points = new ArrayList<>();
+    }
 
     public void setImgBitmap(Bitmap bitmap) {
         imgBitmap = bitmap;
@@ -27,7 +31,7 @@ public class AddWallFragmentModel extends ViewModel {
         return imgBitmap;
     }
 
-    public void setPaths(ArrayList<Path> paths) {
+    public void setPaths(@NonNull ArrayList<Path> paths) {
         this.paths = paths;
     }
 
@@ -49,5 +53,10 @@ public class AddWallFragmentModel extends ViewModel {
 
     public void addPath(Path path) {
         this.paths.add(path);
+    }
+
+    public void clearPaths() {
+        this.paths.clear();
+        this.points.clear();
     }
 }

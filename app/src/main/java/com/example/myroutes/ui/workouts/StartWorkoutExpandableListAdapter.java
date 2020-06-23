@@ -1,4 +1,4 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.TextView;
 
+import com.example.myroutes.R;
 import com.example.myroutes.db.entities.BoulderItem;
 
 import java.util.List;

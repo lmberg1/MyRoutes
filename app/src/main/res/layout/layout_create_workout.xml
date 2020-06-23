@@ -56,7 +56,7 @@
             android:textSize="14sp"
             android:textStyle="bold" />
 
-        <com.example.myroutes.KeyboardEditText
+        <com.example.myroutes.util.KeyboardEditText
             android:id="@+id/workoutName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

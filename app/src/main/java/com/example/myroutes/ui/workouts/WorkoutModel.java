@@ -1,4 +1,4 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import androidx.lifecycle.ViewModel;
 

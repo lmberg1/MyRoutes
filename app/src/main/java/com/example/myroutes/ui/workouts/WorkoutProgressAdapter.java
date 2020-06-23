@@ -1,4 +1,4 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import android.graphics.PorterDuff;
 import android.graphics.drawable.LayerDrawable;
@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myroutes.R;
 import com.example.myroutes.db.entities.BoulderItem;
 
 import java.util.List;

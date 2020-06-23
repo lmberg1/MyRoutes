@@ -1,7 +1,6 @@
-package com.example.myroutes;
+package com.example.myroutes.ui.workouts;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,14 +22,15 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.db.entities.WorkoutItem;
 import com.example.myroutes.util.AlertDialogManager;
+import com.example.myroutes.util.WallLoadingErrorHandler;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -62,12 +62,20 @@ public class WorkoutFragment extends Fragment {
     private List<List<BoulderItem>> expandableListData;
 
     // Current wall variables
-    private List<String> currentGrades;
     private Wall wall;
 
     // Set if we are currently editing a workout
     private WorkoutItem workoutItem;
-    private boolean edited = false;
+
+    private static final class MESSAGE {
+        static final String NO_BOULDERS = "You have no boulders. Add some from the \"Add Boulder\" page to start creating workouts.";
+        static final String NO_WORKOUTS = "You have no workouts. Add one using the form above.";
+        static final String NO_SETS = "Your workout doesn't have any sets";
+        static final String NO_WORKOUT_NAME = "You must give your workout a name";
+        static final String NO_SET_NUMBER = "You must provide a positive number of boulders";
+        static final String NO_WORKOUT_CHANGES = "You didn't make any changes to this workout";
+        static final String TITLE_LENGTH = "Your workout name must have fewer than 50 characters";
+    }
 
     @Override
     public View onCreateView(
@@ -90,39 +98,26 @@ public class WorkoutFragment extends Fragment {
         // Check for changes in the current wall
         final ProgressBar progressBar = view.findViewById(R.id.progressBar_cyclic);
         final TextView messageText = view.findViewById(R.id.error_message);
-        messageText.setVisibility(View.VISIBLE);
         model.getCurrentWallStatus().observe(getViewLifecycleOwner(), result -> {
-            if (result == null) {
-                progressBar.setVisibility(View.GONE);
-                String message = "You have no walls. Go to the Manage Walls panel to add one.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.FAILURE) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. Something went wrong. Make sure you are connected to the internet and try again.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.NOT_FOUND) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. The wall you tried to go to no longer exists.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.LOADING) {
-                progressBar.setVisibility(View.VISIBLE);
-            }
-            else if (result == SharedViewModel.Status.SUCCESS){
-                progressBar.setVisibility(View.GONE);
-                messageText.setVisibility(View.GONE);
+            // Check if there was an error
+            boolean success = WallLoadingErrorHandler.handleError(result, progressBar, messageText);
+            if (success) {
                 view.findViewById(R.id.container).setVisibility(View.VISIBLE);
                 this.wall = model.getWall(model.getCurrentWallId());
                 this.workoutItems = wall.getWorkouts();
 
                 // Display message if there are no boulders
-                if (this.wall.getBoulders().isEmpty()) {
-                    messageText.setText(String.format("%s", "You have no boulders. Add some from the Home page to start creating workouts"));
+                if (wall.getBoulders().isEmpty()) {
+                    messageText.setText(MESSAGE.NO_BOULDERS);
+                    messageText.setVisibility(View.VISIBLE);
                     return;
                 }
-                // Otherwise, set up the view
+                // Display message if there are no workouts
+                if (workoutItems.isEmpty()) {
+                    messageText.setText(MESSAGE.NO_WORKOUTS);
+                    messageText.setVisibility(View.VISIBLE);
+                }
+                // Set up the view
                 setupView(view);
             }
         });
@@ -133,53 +128,20 @@ public class WorkoutFragment extends Fragment {
         TextView wallName = view.findViewById(R.id.wallName);
         wallName.setText(String.format("%s", wall.getName()));
 
-        // Get all of the grades that the current wall has
-        List<String> allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
-        Set<String> currentGradesSet = wall.getBoulders().keySet();
-        currentGrades = new ArrayList<>();
-        for (String s : allGrades) {
-            if (currentGradesSet.contains(s)) { currentGrades.add(s); }
-        }
-
-        // Setup data for workout list
-        workoutListItems = new ArrayList<>();
-        for (WorkoutItem w : workoutItems) {
-            workoutListItems.add(wall.workoutToBoulders(w));
-        }
-
-        // Setup list of workout
-        workoutList = view.findViewById(R.id.workout_list);
-        workoutListAdapter = new WorkoutListAdapter(requireContext(), workoutItems, workoutListItems);
-        workoutListAdapter.setOnStartWorkout(this::onClickStartWorkout);
-        workoutListAdapter.setOnEditWorkout(this::onClickEditWorkout);
-        workoutList.setAdapter(workoutListAdapter);
-        setListViewHeightBasedOnChildren(workoutList);
-
+        // Get views
         scrollView = view.findViewById(R.id.container);
-
-        // Get views in the create workout dialog
+        workoutList = view.findViewById(R.id.workout_list);
         View dialog = view.findViewById(R.id.workout_dialog);
         expandableListView = dialog.findViewById(R.id.setList);
         createWorkoutTitle = dialog.findViewById(R.id.createWorkoutTitle);
         deleteWorkout = dialog.findViewById(R.id.deleteWorkout);
         workoutName = dialog.findViewById(R.id.workoutName);
 
-        // Initialize expandable list view data
-        expandableListData = new ArrayList<>();
+        // Initialize the workout list view
+        setupWorkoutList();
 
-        // Setup expandable list view
-        setListAdapter = new WorkoutExpandableListAdapter(requireContext(), null, expandableListData, currentGrades);
-        setListAdapter.setOnDropdownClick(this::toggleDropdown);
-        setListAdapter.setOnDeleteClick(this::onClickDeleteSet);
-        expandableListView.setAdapter(setListAdapter);
-        setListAdapter.setOnInputChangedListener((groupPosition, selectedNumber, selectedGrade) -> {
-            edited = true;
-            // Create randomized boulder set
-            List<BoulderItem> allBoulderOfGrade = Objects.requireNonNull(wall.getBoulders().get(selectedGrade));
-            List<BoulderItem> boulders = createRandomizedBoulderList(selectedNumber, allBoulderOfGrade);
-            expandableListData.set(groupPosition, boulders);
-            setListAdapter.setItems(expandableListData);
-        });
+        // Initialize the expandable list view for workout sets
+        setupWorkoutSetExpandableList();
 
         // Set up buttons
         Button addSet = dialog.findViewById(R.id.addSet);
@@ -192,6 +154,20 @@ public class WorkoutFragment extends Fragment {
     }
 
     /*-------------------------------Handle Workout Set List--------------------------------------*/
+
+    private void setupWorkoutSetExpandableList() {
+        // Initialize expandable list view data
+        expandableListData = new ArrayList<>();
+
+        // Setup expandable list view
+        List<String> currentGrades = getSortedWallGrades(wall.getBoulders().keySet());
+        setListAdapter = new WorkoutExpandableListAdapter(requireContext(), null,
+                expandableListData, currentGrades);
+        setListAdapter.setOnDropdownClick(this::toggleDropdown);
+        setListAdapter.setOnDeleteClick(this::onClickDeleteSet);
+        setListAdapter.setOnInputChangedListener(this::onCreateRandomizedSet);
+        expandableListView.setAdapter(setListAdapter);
+    }
 
     private void resetExpandableListData() {
         expandableListData.clear();
@@ -216,6 +192,14 @@ public class WorkoutFragment extends Fragment {
         setListViewHeightBasedOnChildren(expandableListView);
     }
 
+    private void onCreateRandomizedSet(int groupPosition, int selectedNumber, String selectedGrade) {
+        // Create randomized boulder set
+        List<BoulderItem> allBoulderOfGrade = Objects.requireNonNull(wall.getBoulders().get(selectedGrade));
+        List<BoulderItem> boulders = createRandomizedBoulderList(selectedNumber, allBoulderOfGrade);
+        expandableListData.set(groupPosition, boulders);
+        setListAdapter.setItems(expandableListData);
+    }
+
     private boolean toggleDropdown(ImageButton dropdown, int groupPosition) {
         if (expandableListView.isGroupExpanded(groupPosition)) {
             expandableListView.collapseGroup(groupPosition);
@@ -230,6 +214,21 @@ public class WorkoutFragment extends Fragment {
     }
 
     /*---------------------------Handle Existing Workout List-------------------------------------*/
+
+    private void setupWorkoutList() {
+        // Setup data for workout list
+        workoutListItems = new ArrayList<>();
+        for (WorkoutItem w : workoutItems) {
+            workoutListItems.add(wall.workoutToBoulders(w));
+        }
+
+        // Setup list of workout
+        workoutListAdapter = new WorkoutListAdapter(requireContext(), workoutItems, workoutListItems);
+        workoutListAdapter.setOnStartWorkout(this::onClickStartWorkout);
+        workoutListAdapter.setOnEditWorkout(this::onClickEditWorkout);
+        workoutList.setAdapter(workoutListAdapter);
+        setListViewHeightBasedOnChildren(workoutList);
+    }
 
     private void onClickStartWorkout(String workout_id) {
         fragmentModel.setWorkout_id(workout_id);
@@ -295,47 +294,18 @@ public class WorkoutFragment extends Fragment {
     /*------------------------------Handle Creating New Workout-----------------------------------*/
 
     private void saveWorkout() {
-        // Handle errors
-        if (expandableListData.size() == 0) {
-            Toast.makeText(requireContext(), "Your workout doesn't have any sets", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        boolean wasError = false;
-        if (workoutName.getText().toString().isEmpty()) {
-            String error = "You must give your workout a name";
-            workoutName.setError(error);
-            wasError = true;
-        }
-        String error = "You must provide a number";
-        for (int i = 0; i < expandableListData.size(); i++) {
-            if (expandableListData.get(i).isEmpty()) {
-                View child = expandableListView.getChildAt(i);
-                ((TextView) (child.findViewById(R.id.errorMsg))).setError(error);
-                wasError = true;
-            }
-        }
-        if (wasError) { return; }
+        // Check for errors in the form
+        String name = workoutName.getText().toString();
+        List<List<String>> boulderIds = bouldersToIds(expandableListData);
+        if (checkForError(name, boulderIds)) return;
 
         // Check if we are editing a workout or creating a new one
         String workout_id = (workoutItem == null) ?
                 UUID.randomUUID().toString().substring(0, 8) : workoutItem.getWorkout_id();
 
-        // If we are editing a workout, make sure workout has actually been edited
-        String name = workoutName.getText().toString();
-        List<List<String>> boulderIds = bouldersToIds(expandableListData);
-        if (workoutItem != null) {
-            if (workoutItem.getWorkout_name().equals(name) &&
-                    workoutItem.getWorkoutSets().equals(boulderIds)) {
-                Toast.makeText(requireContext(), "You didn't make any changes to this workout", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
         // Create workout item
         WorkoutItem newWorkoutItem = new WorkoutItem(model.getStitchUserId(), wall.getId(), workout_id,
                 name, boulderIds);
-
-        Log.e(TAG, String.format("%d", boulderIds.size()));
 
         // Add workout item to repository
         model.addWorkoutItem(newWorkoutItem);
@@ -343,22 +313,66 @@ public class WorkoutFragment extends Fragment {
         // Update list view
         if (workoutItems.contains(workoutItem)) {
             int index = workoutItems.indexOf(workoutItem);
-            //workoutItems.set(index, newWorkoutItem);
+            workoutItems.set(index, newWorkoutItem);
             workoutListItems.set(index, wall.workoutToBoulders(workoutItem));
             Toast.makeText(requireContext(), String.format("Updated Workout \"%s\"", name), Toast.LENGTH_SHORT).show();
         }
         else {
             this.workoutItem = newWorkoutItem;
-            //workoutItems.add(workoutItem);
             workoutListItems.add(wall.workoutToBoulders(workoutItem));
             Toast.makeText(requireContext(), String.format("Saved Workout \"%s\"", name), Toast.LENGTH_SHORT).show();
         }
-        Log.e(TAG, String.format("%d %d", workoutItems.size(), workoutListItems.size()));
-        //workoutListAdapter.setItems(workoutItems, workoutListItems);
+        workoutListAdapter.setItems(workoutItems, workoutListItems);
         setListViewHeightBasedOnChildren(workoutList);
     }
 
+    private boolean checkForError(String name, List<List<String>> boulderIds) {
+        // Make sure there is at least one set
+        if (expandableListData.size() == 0) {
+            Toast.makeText(requireContext(), MESSAGE.NO_SETS, Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        boolean wasError = false;
+        // Make sure user gave a title
+        String title = workoutName.getText().toString();
+        if (title.isEmpty()) {
+            workoutName.setError(MESSAGE.NO_WORKOUT_NAME);
+            wasError = true;
+        }
+        // Make sure title wasn't too long
+        if (title.length() > 50) {
+            workoutName.setError(MESSAGE.TITLE_LENGTH);
+            wasError = true;
+        }
+        // Make sure no set number has 0 climbs
+        for (int i = 0; i < expandableListData.size(); i++) {
+            if (expandableListData.get(i).isEmpty()) {
+                View child = expandableListView.getChildAt(i);
+                ((TextView) (child.findViewById(R.id.errorMsg))).setError(MESSAGE.NO_SET_NUMBER);
+                wasError = true;
+            }
+        }
+        // If we are editing a workout, make sure workout has actually been edited
+        if (workoutItem != null) {
+            if (workoutItem.getWorkout_name().equals(name) &&
+                    workoutItem.getWorkoutSets().equals(boulderIds)) {
+                Toast.makeText(requireContext(), MESSAGE.NO_WORKOUT_CHANGES, Toast.LENGTH_SHORT).show();
+                wasError = true;
+            }
+        }
+        return wasError;
+    }
+
     /*-------------------------------------Helper Functions---------------------------------------*/
+
+    private static List<String> getSortedWallGrades(Set<String> currentGradesSet) {
+        // Get all of the grades that the current wall has in sorted order
+        List<String> currentGrades = new ArrayList<>();
+        for (String s : SharedViewModel.BOULDER_GRADES) {
+            if (currentGradesSet.contains(s)) { currentGrades.add(s); }
+        }
+        return currentGrades;
+    }
 
     private static List<BoulderItem> createRandomizedBoulderList(int n, List<BoulderItem> boulders) {
         Random rand = new Random();
@@ -402,6 +416,8 @@ public class WorkoutFragment extends Fragment {
                 + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
         listView.setLayoutParams(params);
     }
+
+    /*-----------------------------------------Clean Up-------------------------------------------*/
 
     @Override
     public void onDestroyView() {

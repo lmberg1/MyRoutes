@@ -34,6 +34,7 @@ import com.example.myroutes.R;
 import com.example.myroutes.db.SharedViewModel;
 import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.util.WallDrawingHelper;
+import com.example.myroutes.util.WallLoadingErrorHandler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +75,11 @@ public class AddBoulderFragment extends Fragment {
     // Boulder item that we are editing (if in editing mode)
     private BoulderItem boulderItem;
 
+    private static final class MESSAGE {
+        static final String WRONG_HOLD_NUMBER = "Your boulder must have at least 3 holds.";
+        static final String TITLE_LENGTH = "Your boulder name must have fewer than 50 characters";
+    }
+
     @Override
     public View onCreateView(
             LayoutInflater inflater, ViewGroup container,
@@ -96,27 +102,9 @@ public class AddBoulderFragment extends Fragment {
         final TextView messageText = view.findViewById(R.id.error_message);
         messageText.setVisibility(View.VISIBLE);
         model.getCurrentWallStatus().observe(getViewLifecycleOwner(), result -> {
-            if (result == null) {
-                progressBar.setVisibility(View.GONE);
-                String message = "You have no walls. Go to the Manage Walls panel to add one.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.FAILURE) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. Something went wrong. Make sure you are connected to the internet and try again.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.NOT_FOUND) {
-                progressBar.setVisibility(View.GONE);
-                String message = "Oh no. The wall you tried to go to no longer exists.";
-                messageText.setText(message);
-            }
-            else if (result == SharedViewModel.Status.LOADING) {
-                progressBar.setVisibility(View.VISIBLE);
-            }
-            else if (result == SharedViewModel.Status.SUCCESS) {
-                messageText.setVisibility(View.GONE);
-                progressBar.setVisibility(View.GONE);
+            // Check if there was an error
+            boolean success = WallLoadingErrorHandler.handleError(result, progressBar, messageText);
+            if (success) {
                 this.wall_id = model.getCurrentWallId();
                 this.wall = model.getWall(wall_id);
                 this.imgBitmap = wall.getBitmap();
@@ -126,14 +114,12 @@ public class AddBoulderFragment extends Fragment {
     }
 
     private void setupView(View view) {
-        // Set title
+        // Get views
         title = view.findViewById(R.id.title);
-
-        // Handle buttons
-        Button saveButton = view.findViewById(R.id.saveBoulder);
-        Button clearButton = view.findViewById(R.id.clearHolds);
-        saveButton.setOnClickListener(this::onSaveBoulderClick);
-        clearButton.setOnClickListener(v -> { fragmentModel.clearHighlightedHolds(); drawPaths(); });
+        deleteBoulder = view.findViewById(R.id.deleteBoulder);
+        resetBoulder = view.findViewById(R.id.resetHolds);
+        imageBottom = view.findViewById(R.id.helperMessage);
+        imageView = view.findViewById(R.id.imageView2);
 
         // Initialize paths
         ArrayList<Path> allPaths = wall.getPaths();
@@ -144,22 +130,15 @@ public class AddBoulderFragment extends Fragment {
         }
 
         // Check if homeFragment passed a boulderItem to edit
-        deleteBoulder = view.findViewById(R.id.deleteBoulder);
-        resetBoulder = view.findViewById(R.id.resetHolds);
-        if (fragmentModel.getBoulder() != null) {
-            this.boulderItem = fragmentModel.getBoulder();
-            fragmentModel.setHighlightedHolds(boulderItem.getBoulder_holds());
-            title.setText(String.format("Editing \"%s (%s)\"",
-                    boulderItem.getBoulder_name(), boulderItem.getBoulder_grade()));
-            deleteBoulder.setVisibility(View.VISIBLE);
-            deleteBoulder.setOnClickListener(this::onDeleteBoulderClick);
-            resetBoulder.setVisibility(View.VISIBLE);
-            resetBoulder.setOnClickListener(this::onResetHoldsClick);
-        }
+        if (fragmentModel.getBoulder() != null) { displayEditView(); }
+
+        // Handle buttons
+        Button saveButton = view.findViewById(R.id.saveBoulder);
+        Button clearButton = view.findViewById(R.id.clearHolds);
+        saveButton.setOnClickListener(this::onSaveBoulderClick);
+        clearButton.setOnClickListener(v -> { fragmentModel.clearHighlightedHolds(); drawPaths(); });
 
         // Listen for imageView to be inflated so we can resize it
-        imageBottom = view.findViewById(R.id.helperMessage);
-        imageView = view.findViewById(R.id.imageView2);
         ViewTreeObserver vto = imageView.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -170,9 +149,26 @@ public class AddBoulderFragment extends Fragment {
         });
     }
 
-    private void goToHomeFragment(View v) {
-        NavHostFragment.findNavController(AddBoulderFragment.this)
-                .navigate(R.id.nav_home);
+    // Change the Add Boulder display if we are editing a boulder rather than creating one
+    private void displayEditView() {
+        this.boulderItem = fragmentModel.getBoulder();
+        fragmentModel.setHighlightedHolds(boulderItem.getBoulder_holds());
+        // Change title of fragment
+        title.setText(String.format("Editing \"%s (%s)\"",
+                boulderItem.getBoulder_name(), boulderItem.getBoulder_grade()));
+        // Show buttons for deleting boulder and reseting boulder holds
+        deleteBoulder.setVisibility(View.VISIBLE);
+        resetBoulder.setVisibility(View.VISIBLE);
+        deleteBoulder.setOnClickListener(this::onDeleteBoulderClick);
+        resetBoulder.setOnClickListener(this::onResetHoldsClick);
+    }
+
+    // Change the Add Boulder display if we are creating a boulder
+    private void displayAddView() {
+        // Hide buttons and reset title
+        title.setText(String.format("%s", "Add Boulder"));
+        deleteBoulder.setVisibility(View.GONE);
+        resetBoulder.setVisibility(View.GONE);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -196,11 +192,8 @@ public class AddBoulderFragment extends Fragment {
         highlightPaint = WallDrawingHelper.getHighlightPaint();
         canvasPaint = WallDrawingHelper.getCanvasPaint();
 
-        // Transform hold paths
-        for (Path p : holdPaths) {
-            p.close();
-            p.transform(matrix);
-        }
+        // Transform hold paths to fit on image
+        for (Path p : holdPaths) { p.transform(matrix); }
 
         // Draw paths
         imageView.setImageBitmap(drawingBitmap);
@@ -210,22 +203,9 @@ public class AddBoulderFragment extends Fragment {
         imageView.setOnTouchListener(new ImageOnTouchListener(this::onDetectTap));
     }
 
-    private void drawPaths() {
-        // Clear canvas
-        canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
+    /*-------------------------------Handle Display of Holds--------------------------------------*/
 
-        // Draw all of the holds
-        for (Path p : holdPaths) {
-            canvas.drawPath(p, drawPaint);
-        }
-
-        // Draw the highlighted holds
-        for (int j : fragmentModel.getHighlightedHolds()) {
-            canvas.drawPath(holdPaths.get(j), highlightPaint);
-        }
-        imageView.setImageBitmap(drawingBitmap);
-    }
-
+    // Toggle highlighting of tapped holds
     private void onDetectTap(float touchX, float touchY) {
         // Create regions to detect intersections between user touch and hold location
         Region region1 = new Region();
@@ -243,28 +223,48 @@ public class AddBoulderFragment extends Fragment {
             Path p = holdPaths.get(i);
             region2.setPath(p, imageRegion);
 
-            // Check if touch intersects with hold path
-            if (!region1.quickReject(region2)) {
-                // Hold is already highlighted so unselect it
-                if (fragmentModel.hasHighlighedHold(i)) {
-                    fragmentModel.removeHighlightedHold(i);
-                    drawPaths();
-                }
-                // Hold needs to be highlighted
-                else {
-                    fragmentModel.addHighlightedHold(holdPaths.indexOf(p));
-                    canvas.drawPath(p, highlightPaint);
-                    imageView.setImageBitmap(drawingBitmap);
-                }
-                break;
+            // Tap did not intersect with hold so continue
+            if (region1.quickReject(region2)) continue;
+
+            // Hold is already highlighted so unhighlight it
+            if (fragmentModel.hasHighlighedHold(i)) {
+                fragmentModel.removeHighlightedHold(i);
+                drawPaths();
             }
+            // Hold needs to be highlighted
+            else {
+                fragmentModel.addHighlightedHold(holdPaths.indexOf(p));
+                canvas.drawPath(p, highlightPaint);
+                imageView.setImageBitmap(drawingBitmap);
+            }
+            // Break so that user tap doesn't affect multiple holds
+            break;
         }
     }
 
+    // Reset highlighted holds (if editing a boulder)
     private void onResetHoldsClick(View view) {
         fragmentModel.setHighlightedHolds(boulderItem.getBoulder_holds());
         drawPaths();
     }
+
+    // Draw all the holds along with the highlighted holds
+    private void drawPaths() {
+        // Clear canvas
+        canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
+
+        // Draw all of the holds
+        for (Path p : holdPaths) {
+            canvas.drawPath(p, drawPaint);
+        }
+        // Draw the highlighted holds
+        for (int j : fragmentModel.getHighlightedHolds()) {
+            canvas.drawPath(holdPaths.get(j), highlightPaint);
+        }
+        imageView.setImageBitmap(drawingBitmap);
+    }
+
+    /*---------------------------Handle Saving/Deleting Boulders----------------------------------*/
 
     private void onDeleteBoulderClick(View view) {
         Context context = requireContext();
@@ -291,10 +291,8 @@ public class AddBoulderFragment extends Fragment {
             boulderItem = null;
             fragmentModel.clearHighlightedHolds();
             drawPaths();
-            // Hide buttons and reset title
-            title.setText(String.format("%s", "Add Boulder"));
-            deleteBoulder.setVisibility(View.GONE);
-            resetBoulder.setVisibility(View.GONE);
+            // Reset the Add Boulder view
+            displayAddView();
         });
     }
 
@@ -302,23 +300,8 @@ public class AddBoulderFragment extends Fragment {
         Context context = requireContext();
         FragmentActivity activity = requireActivity();
 
-        // Handle errors (there must be at least 3 holds to save a boulder)
-        int nHolds = fragmentModel.getHighlightedHolds().size();
-        if (nHolds < 3) {
-            if (nHolds == 0) {
-                String error = "Your did not select any holds!";
-                Toast.makeText(context, error, Toast.LENGTH_SHORT).show();
-            }
-            else if (nHolds == 1) {
-                String error = "You only selected one hold!";
-                Toast.makeText(context, error, Toast.LENGTH_SHORT).show();
-            }
-            else {
-                String error = "You only selected two holds!";
-                Toast.makeText(context, error, Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
+        // Don't show dialog if there aren't enough boulders selected
+        if (checkSaveBoulderErrors()) return;
 
         // Create alert dialog
         AlertDialog alertDialog = AlertDialogManager.createAddBoulderDialog(context);
@@ -338,17 +321,20 @@ public class AddBoulderFragment extends Fragment {
             spinner.setSelection(Arrays.asList(BOULDER_GRADES).indexOf(boulderItem.getBoulder_grade()));
         }
 
-        // Let user cancel dialog
         cancelUserDataButton.setOnClickListener(v -> alertDialog.cancel());
-
-        // Let user save data
         saveUserDataButton.setOnClickListener(v -> {
-            // Close the dialog
-            alertDialog.cancel();
-
             // Get wall info
             String boulderName = boulderNameEditText.getText().toString();
             String grade = (String) spinner.getSelectedItem();
+
+            // Check for errors in the title
+            if (boulderName.length() > 50) {
+                boulderNameEditText.setError(MESSAGE.TITLE_LENGTH);
+                return;
+            }
+
+            // Close the dialog
+            alertDialog.cancel();
 
             // Get or create boulder id
             String boulder_id = (boulderItem != null) ? boulderItem.getBoulder_id() :
@@ -364,6 +350,18 @@ public class AddBoulderFragment extends Fragment {
                     Toast.LENGTH_SHORT).show();
         });
     }
+
+    private boolean checkSaveBoulderErrors() {
+        // Handle errors (there must be at least 3 holds to save a boulder)
+        int nHolds = fragmentModel.getHighlightedHolds().size();
+        if (nHolds < 3) {
+            Toast.makeText(requireContext(), MESSAGE.WRONG_HOLD_NUMBER, Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return false;
+    }
+
+    /*-----------------------------------------Clean Up-------------------------------------------*/
 
     @Override
     public void onDestroyView() {

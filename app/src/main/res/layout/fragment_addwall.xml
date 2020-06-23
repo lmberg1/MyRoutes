@@ -6,9 +6,23 @@
     android:layout_height="match_parent"
     tools:context=".ui.addWall.AddWallFragment">
 
+    <ImageView
+        android:id="@+id/backButton"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:background="@color/colorPrimary"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:src="@drawable/abc_vector_test"
+        android:tint="#FFFFFF"
+        app:layout_constraintBottom_toTopOf="@id/bottomAppBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/homeAppBar"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
         android:gravity="center"
@@ -17,7 +31,7 @@
         android:paddingEnd="16dp"
         android:transitionName="topAppBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/backButton"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -64,7 +78,7 @@
             android:layout_width="70dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:drawableTop="@drawable/ic_clear_black_24dp"
+            android:drawableTop="@drawable/ic_baseline_clear_24"
             android:drawableTint="@color/colorAccent"
             android:text="Remove Holds"
             android:textAllCaps="false"

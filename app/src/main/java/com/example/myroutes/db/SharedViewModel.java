@@ -382,8 +382,9 @@ public class SharedViewModel extends AndroidViewModel {
         // Check if workout already exists
         WorkoutItem existingWorkout = wall.searchWorkout(workoutItem.getWorkout_id());
         if (existingWorkout != null) {
-            wall.removeWorkout(existingWorkout);
-            wall.addWorkout(workoutItem);
+            List<WorkoutItem> workouts = wall.getWorkouts();
+            int index = workouts.indexOf(existingWorkout);
+            workouts.set(index, workoutItem);
             wallDataRepository.updateWorkout(workoutItem);
             return;
         }
@@ -413,10 +414,5 @@ public class SharedViewModel extends AndroidViewModel {
 
     public LiveData<Status> setStitchUser(String username) {
         return wallDataRepository.setStichUser(username);
-    }
-
-    @Override
-    protected void onCleared() {
-        super.onCleared();
     }
 }
