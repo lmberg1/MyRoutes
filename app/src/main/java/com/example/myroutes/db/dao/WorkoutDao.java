@@ -22,8 +22,8 @@ public interface WorkoutDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(WorkoutItem... items);
 
-    @Query("select * from workout_table where workout_id = :workout_id")
-    LiveData<List<WorkoutItem>> getAllFromWall(@NonNull String workout_id);
+    @Query("select * from workout_table where wall_id = :wall_id")
+    LiveData<List<WorkoutItem>> getAllFromWall(@NonNull String wall_id);
 
     @Query("delete from workout_table where workout_id = :workout_id")
     void deleteWorkout(String workout_id);

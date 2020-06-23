@@ -57,6 +57,14 @@ public class Wall {
         data.setWall_name(name);
     }
 
+    public void setBoulders(HashMap<String, List<BoulderItem>> boulders) {
+        this.boulders = boulders;
+    }
+
+    public void setWorkouts(List<WorkoutItem> workouts) {
+        this.workouts = workouts;
+    }
+
     public void addBoulder(BoulderItem item) {
         String grade = item.getBoulder_grade();
         List<BoulderItem> boulderItems = boulders.getOrDefault(grade, new ArrayList<>());
@@ -90,6 +98,26 @@ public class Wall {
             }
         }
         return null;
+    }
+
+    public List<List<BoulderItem>> workoutToBoulders(WorkoutItem workoutItem) {
+        List<List<BoulderItem>> boulderSets = new ArrayList<>();
+        List<List<String>> boulderSetList = workoutItem.getWorkoutSets();
+
+        // Convert lists of ids to lists of boulders for each set
+        int nSets = boulderSetList.size();
+        for (int i = 0; i < nSets; i++) {
+            List<String> boulderIds = boulderSetList.get(i);
+            List<BoulderItem> boulderItems = new ArrayList<>();
+            for (String boulder_id : boulderIds) {
+                BoulderItem b = searchBoulderId(boulder_id);
+                // Maker sure boulder exists
+                if (b != null) { boulderItems.add(b); }
+            }
+            // Make sure there are boulders in this set
+            if (!boulderItems.isEmpty()) { boulderSets.add(boulderItems); }
+        }
+        return boulderSets;
     }
 
     public void addWorkout(WorkoutItem item) {

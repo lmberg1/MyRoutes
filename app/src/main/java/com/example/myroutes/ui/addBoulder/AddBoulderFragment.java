@@ -59,8 +59,9 @@ public class AddBoulderFragment extends Fragment {
     private Region imageRegion;
 
     // Edit boulder mode views
-    private TextView editBoulderText;
-    private ImageView deleteBoulder;
+    private TextView title;
+    private Button deleteBoulder;
+    private Button resetBoulder;
 
     // Drawing variables
     private Bitmap imgBitmap;
@@ -126,12 +127,7 @@ public class AddBoulderFragment extends Fragment {
 
     private void setupView(View view) {
         // Set title
-        TextView title = view.findViewById(R.id.title);
-        title.setText(wall.getName());
-
-        // Handle back navigation
-        ImageView backButton = view.findViewById(R.id.backButton);
-        backButton.setOnClickListener(this::goToHomeFragment);
+        title = view.findViewById(R.id.title);
 
         // Handle buttons
         Button saveButton = view.findViewById(R.id.saveBoulder);
@@ -148,15 +144,17 @@ public class AddBoulderFragment extends Fragment {
         }
 
         // Check if homeFragment passed a boulderItem to edit
-        editBoulderText = view.findViewById(R.id.boulderName);
         deleteBoulder = view.findViewById(R.id.deleteBoulder);
+        resetBoulder = view.findViewById(R.id.resetHolds);
         if (fragmentModel.getBoulder() != null) {
             this.boulderItem = fragmentModel.getBoulder();
             fragmentModel.setHighlightedHolds(boulderItem.getBoulder_holds());
-            editBoulderText.setText(String.format("Editing %s (%s)",
+            title.setText(String.format("Editing \"%s (%s)\"",
                     boulderItem.getBoulder_name(), boulderItem.getBoulder_grade()));
             deleteBoulder.setVisibility(View.VISIBLE);
             deleteBoulder.setOnClickListener(this::onDeleteBoulderClick);
+            resetBoulder.setVisibility(View.VISIBLE);
+            resetBoulder.setOnClickListener(this::onResetHoldsClick);
         }
 
         // Listen for imageView to be inflated so we can resize it
@@ -263,6 +261,11 @@ public class AddBoulderFragment extends Fragment {
         }
     }
 
+    private void onResetHoldsClick(View view) {
+        fragmentModel.setHighlightedHolds(boulderItem.getBoulder_holds());
+        drawPaths();
+    }
+
     private void onDeleteBoulderClick(View view) {
         Context context = requireContext();
         FragmentActivity activity = requireActivity();
@@ -278,14 +281,20 @@ public class AddBoulderFragment extends Fragment {
 
         cancel.setOnClickListener(v -> alertDialog.cancel());
         delete.setOnClickListener(v -> {
+            // Delete the boulder
             model.deleteBoulderItem(boulderItem);
+            String name = boulderItem.getBoulder_name();
+            Toast.makeText(activity.getApplicationContext(), "Deleted Boulder " + name,
+                    Toast.LENGTH_SHORT).show();
+            // Clear the boulder item and any highlighted holds
+            alertDialog.cancel();
             boulderItem = null;
             fragmentModel.clearHighlightedHolds();
-            editBoulderText.setText("");
+            drawPaths();
+            // Hide buttons and reset title
+            title.setText(String.format("%s", "Add Boulder"));
             deleteBoulder.setVisibility(View.GONE);
-            alertDialog.cancel();
-            Toast.makeText(activity.getApplicationContext(), "Deleted Boulder " + boulderItem.getBoulder_name(),
-                    Toast.LENGTH_SHORT).show();
+            resetBoulder.setVisibility(View.GONE);
         });
     }
 

@@ -100,8 +100,8 @@ public class SharedViewModel extends AndroidViewModel {
         // Try to fetch data, image, and boulders from repository
         LiveData<Result<WallDataItem>> data = wallDataRepository.getWallData(wall_id);
         LiveData<Result<WallImageItem>> image = wallDataRepository.getImageData(wall_id);
-        LiveData<Result<List<BoulderItem>>> boulders = wallDataRepository.getBoulders(wall_id);
-        LiveData<Result<List<WorkoutItem>>> workouts = wallDataRepository.getWorkouts(wall_id);
+        LiveData<Result<List<BoulderItem>>> boulders = wallDataRepository.getMongoBoulders(wall_id);
+        LiveData<Result<List<WorkoutItem>>> workouts = wallDataRepository.getMongoWorkouts(wall_id);
 
         // Wait until data, image, and boulders results have loaded
         waitForAll(data, image, boulders, workouts).observeForever(o -> {
@@ -195,6 +195,29 @@ public class SharedViewModel extends AndroidViewModel {
         }
         // Update preferences
         sharedPreferencesModel.setWall_metadata(metadata);
+    }
+
+    public LiveData<Status> syncBoulders(String wall_id) {
+        MediatorLiveData<Status> mediator = new MediatorLiveData<>();
+        LiveData<Result<List<BoulderItem>>> boulders = wallDataRepository.getMongoBoulders(wall_id);
+        waitForAll(boulders).observeForever(o -> {
+            // Check if data is still loading
+            if (o == Status.LOADING) {
+                mediator.setValue(Status.LOADING);
+                return;
+            }
+            // Check if data or image loading resulted in errors
+            Result<List<BoulderItem>> boulderItems = boulders.getValue();
+            if (boulderItems == null) return;
+            Status s = checkForLoadError(boulderItems);
+            if (s != Status.SUCCESS) {
+                mediator.setValue(s);
+                return;
+            }
+            getWall(wall_id).setBoulders(orderByGrade(boulderItems.data));
+            mediator.setValue(Status.SUCCESS);
+        });
+        return mediator;
     }
 
     /*-----------------------------------HANDLE PREFERENCES---------------------------------------*/

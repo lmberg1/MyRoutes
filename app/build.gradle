@@ -61,5 +61,7 @@ dependencies {
     implementation 'org.mongodb:stitch-android-sdk:4.7.0'
     implementation 'com.github.MikeOrtiz:TouchImageView:2.3.2' // Android X
 
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
     //debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.3'
 }

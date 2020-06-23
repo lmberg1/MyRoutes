@@ -13,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import androidx.core.util.Consumer;
+
 import com.example.myroutes.db.entities.BoulderItem;
 import com.google.android.gms.common.util.BiConsumer;
 
@@ -29,6 +31,7 @@ public class WorkoutExpandableListAdapter extends BaseExpandableListAdapter {
     private List<List<BoulderItem>> expandableListDetail;
     private List<String> gradeList;
     private BiConsumer<ImageButton, Integer> onDropdownClick;
+    private Consumer<Integer> onDeleteClick;
 
     private int preferredPadding;
 
@@ -59,6 +62,10 @@ public class WorkoutExpandableListAdapter extends BaseExpandableListAdapter {
 
     public void setOnDropdownClick(BiConsumer<ImageButton, Integer> onDropdownClick) {
         this.onDropdownClick = onDropdownClick;
+    }
+
+    public void setOnDeleteClick(Consumer<Integer> onDeleteClick) {
+        this.onDeleteClick = onDeleteClick;
     }
 
     @Override
@@ -155,8 +162,9 @@ public class WorkoutExpandableListAdapter extends BaseExpandableListAdapter {
             numberSpinner.setSelection(getChildrenCount(listPosition));
         }
 
+        // Set listeners for buttons
         imageButton.setOnClickListener(v -> onDropdownClick.accept((ImageButton) v, listPosition));
-        deleteButton.setOnClickListener(v -> onDeleteSet(listPosition));
+        deleteButton.setOnClickListener(v -> onDeleteClick.accept(listPosition));
 
         // Listen for changes in the spinners
         AdapterView.OnItemSelectedListener spinnerListener = createOnItemSelectedListener(listPosition, numberSpinner, spinner);
@@ -199,11 +207,6 @@ public class WorkoutExpandableListAdapter extends BaseExpandableListAdapter {
 
     private static String getGradeFromSpinner(Spinner s) {
         return (String) s.getSelectedItem();
-    }
-
-    private void onDeleteSet(int listPosition) {
-        expandableListDetail.remove(listPosition);
-        notifyDataSetChanged();
     }
 
     // Listener for when item in group spinner is selected

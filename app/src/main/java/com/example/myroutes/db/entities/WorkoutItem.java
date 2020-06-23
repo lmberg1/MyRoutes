@@ -3,6 +3,7 @@ package com.example.myroutes.db.entities;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
@@ -20,11 +21,17 @@ public class WorkoutItem {
     @NonNull
     @ColumnInfo(name = "workout_id")
     private final String workout_id;
+
     private final String user_id;
+
+    @ColumnInfo(name = "wall_id")
     private final String wall_id;
     private final String workout_name;
+
     @TypeConverters({StringArrayConverter.class})
     private final List<List<String>> workoutSets; // List of sets of boulder ids
+    @Ignore
+    private int nBoulders;
 
     public WorkoutItem(
             final String user_id,
@@ -37,6 +44,7 @@ public class WorkoutItem {
         this.workout_id = workout_id;
         this.workout_name = workout_name;
         this.workoutSets = workoutSets;
+        this.nBoulders = countBoulders(workoutSets);
     }
 
     public String getUser_id() {
@@ -59,6 +67,13 @@ public class WorkoutItem {
         return workoutSets;
     }
 
+    public int getBoulderCount() {
+        if (nBoulders == 0) {
+            nBoulders = countBoulders(workoutSets);
+        }
+        return nBoulders;
+    }
+
     public BsonArray setsToBson() {
         // Add string list
         BsonArray bsonSets = new BsonArray();
@@ -70,6 +85,14 @@ public class WorkoutItem {
             bsonSets.add(bsonIds);
         }
         return bsonSets;
+    }
+
+    private static int countBoulders(List<List<String>> workoutSets) {
+        int size = 0;
+        for (List<String> items: workoutSets) {
+            size += items.size();
+        }
+        return size;
     }
 }
 

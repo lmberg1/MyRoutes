@@ -92,6 +92,10 @@ public class WallDataRepository {
         AsyncTask.execute(() -> boulderDao.deleteBoulder(boulder_id));
     }
 
+    LiveData<Result<List<BoulderItem>>> getMongoBoulders(String wall_id) {
+        return MongoWebservice.getBouldersFromMongo(wall_id);
+    }
+
     LiveData<Result<List<BoulderItem>>> getBoulders(String wall_id) {
         MediatorLiveData<Result<List<BoulderItem>>> result = new MediatorLiveData<>();
 
@@ -171,6 +175,10 @@ public class WallDataRepository {
 
     private void deleteWorkoutLocal(String workout_id) {
         AsyncTask.execute(() -> workoutDao.deleteWorkout(workout_id));
+    }
+
+    LiveData<Result<List<WorkoutItem>>> getMongoWorkouts(String wall_id) {
+        return MongoWebservice.getWorkoutsFromMongo(wall_id);
     }
 
     LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {

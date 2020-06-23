@@ -7,30 +7,17 @@
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment">
 
-    <ImageView
-        android:id="@+id/backButton"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
+    <LinearLayout
+        android:id="@+id/homeAppBar"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
         android:background="@color/colorPrimary"
         android:paddingStart="16dp"
         android:paddingTop="16dp"
         android:paddingEnd="16dp"
-        android:src="@drawable/abc_vector_test"
-        android:tint="#FFFFFF"
-        app:layout_constraintBottom_toTopOf="@+id/bottomAppBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/homeAppBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        android:paddingTop="16dp"
-        android:paddingEnd="16dp"
         android:transitionName="topAppBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/backButton"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -38,17 +25,24 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="16dp"
-            android:text="Add Boulders"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Add Boulder"
             android:textColor="@android:color/primary_text_dark"
             android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/boulderName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/colorAccent"
-            android:textSize="16sp" />
+        <Button
+            android:id="@+id/deleteBoulder"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="70dp"
+            android:layout_height="30dp"
+            android:background="@drawable/delete_button"
+            android:text="Delete"
+            android:textAllCaps="false"
+            android:textColor="@color/colorCancel"
+            android:textSize="12sp"
+            android:visibility="invisible" />
     </LinearLayout>
 
     <LinearLayout
@@ -76,6 +70,19 @@
             android:textColor="@android:color/white"
             android:textSize="12sp" />
 
+        <Button
+            android:id="@+id/resetHolds"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_baseline_undo_24"
+            android:drawableTint="@color/colorAccent"
+            android:text="Reset"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:visibility="invisible" />
+
         <Space
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -89,15 +96,6 @@
             android:text="Save Boulder"
             android:textAllCaps="false"
             android:textSize="12sp" />
-
-        <ImageButton
-            android:id="@+id/deleteBoulder"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:src="@android:drawable/ic_menu_delete"
-            android:tint="@color/colorCancel"
-            android:visibility="visible" />
 
     </LinearLayout>
 

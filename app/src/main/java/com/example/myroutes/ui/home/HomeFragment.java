@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,6 +37,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -62,9 +64,11 @@ public class HomeFragment extends Fragment {
     // Views
     private ImageButton editBoulder;
     private ImageButton dropdownButton;
+    private ImageButton syncBoulders;
     private TextView boulderName;
     private LinearLayout toggleButtonLayout;
     private ImageView imageView;
+    private TextView messageText;
 
     // Grade button variables
     private List<String> allGrades;
@@ -84,9 +88,9 @@ public class HomeFragment extends Fragment {
             Bundle savedInstanceState
     ) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
-        view.findViewById(R.id.dropdownLayout).setVisibility(View.INVISIBLE);
-        view.findViewById(R.id.floatingActionButton).setVisibility(View.INVISIBLE);
         view.findViewById(R.id.editButton).setVisibility(View.INVISIBLE);
+        view.findViewById(R.id.syncBoulders).setVisibility(View.INVISIBLE);
+        view.findViewById(R.id.dropdownLayout).setVisibility(View.INVISIBLE);
         // Inflate the layout for this fragment
         return view;
     }
@@ -126,13 +130,10 @@ public class HomeFragment extends Fragment {
             else {
                 messageText.setVisibility(View.GONE);
                 progressBar.setVisibility(View.GONE);
+                view.findViewById(R.id.syncBoulders).setVisibility(View.VISIBLE);
                 view.findViewById(R.id.dropdownLayout).setVisibility(View.VISIBLE);
-                view.findViewById(R.id.floatingActionButton).setVisibility(View.VISIBLE);
                 this.wall = model.getWall(model.getCurrentWallId());
                 this.imgBitmap = wall.getBitmap();
-                if (adapter != null) {
-                    adapter.setItems(wall.getBoulders());
-                }
                 setupView(view);
             }
         });
@@ -143,10 +144,6 @@ public class HomeFragment extends Fragment {
         // Get hold paths of the current wall
         paths = wall.getPaths();
 
-        // Handle navigation
-        FloatingActionButton goToAddBoulder = view.findViewById(R.id.floatingActionButton);
-        goToAddBoulder.setOnClickListener(this::goToAddBoulderFragment);
-
         // Get views
         TextView wallName = view.findViewById(R.id.wallName);
         wallName.setText(wall.getName());
@@ -155,24 +152,12 @@ public class HomeFragment extends Fragment {
         editBoulder = view.findViewById(R.id.editButton);
         boulderName = view.findViewById(R.id.boulderName);
         dropdownButton = view.findViewById(R.id.dropdownButton);
+        syncBoulders = view.findViewById(R.id.syncBoulders);
 
-        // Set up listeners
-        editBoulder.setOnClickListener(this::onClickEditBoulder);
-        dropdownButton.setOnClickListener(v -> onClickDrowdown());
-        boulderName.setOnClickListener(v -> onClickDrowdown());
-        imageView.setOnTouchListener(new SwipeListener());
+        messageText = view.findViewById(R.id.noBouldersMessage);
 
-        // Figure out which grades this wall has and only show buttons for those grades
         gradeButtonGroup = view.findViewById(R.id.gradeButtonGroup);
-        allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
-        Set<String> currentGradesSet = wall.getBoulders().keySet();
-        List<String> currentGrades = new ArrayList<>();
-        for (String s : allGrades) {
-            if (currentGradesSet.contains(s)) { currentGrades.add(s); }
-            int buttonIdx = allGrades.indexOf(s);
-            gradeButtonGroup.getChildAt(buttonIdx).setVisibility(
-                    (currentGradesSet.contains(s)) ? View.VISIBLE : View.GONE);
-        }
+        listView = view.findViewById(R.id.expandableListView);
 
         // Called when new grade button is clicked
         gradeButtonGroup.setOnCheckedChangeListener((group, checkedId) -> {
@@ -184,25 +169,25 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        if (wall.getBoulders().size() == 0) {
-            TextView messageText = view.findViewById(R.id.noBouldersMessage);
-            String message = "You don't have any boulders! Add some by clicking the plus button below.";
-            messageText.setText(message);
-            messageText.setVisibility(View.VISIBLE);
-        }
+        // Set up listeners
+        editBoulder.setOnClickListener(this::onClickEditBoulder);
+        dropdownButton.setOnClickListener(v -> onClickDrowdown());
+        boulderName.setOnClickListener(v -> onClickDrowdown());
+        imageView.setOnTouchListener(new SwipeListener());
+        syncBoulders.setOnClickListener(this::onClickSyncBoulders);
 
         // Setup expandable list view
-        adapter = new ExpandableListAdapter(requireContext(), currentGrades, wall.getBoulders());
-        listView = view.findViewById(R.id.expandableListView);
+        adapter = new ExpandableListAdapter(requireContext(), new ArrayList<>(), new HashMap<>());
         listView.setVisibility(View.GONE);
         listView.setAdapter(adapter);
-        listView.setOnTouchListener(new VerticalSwipeListener());
         listView.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
             // Update the view
             RadioButton b = (RadioButton) gradeButtonGroup.getChildAt(groupPosition);
             onClickGradeButton(b.getText().toString(), childPosition);
             return true;
         });
+
+        setupBoulderViews();
 
         // Wait until imageView is setup to allow user interaction
         final ViewTreeObserver vto = imageView.getViewTreeObserver();
@@ -211,6 +196,44 @@ public class HomeFragment extends Fragment {
             public void onGlobalLayout() {
                 imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 setTransformation();
+            }
+        });
+    }
+
+    private static List<String> getCurrentGrades(Set<String> grades, List<String> allGrades) {
+        List<String> gradeList = new ArrayList<>();
+        for (String s : allGrades) {
+            if (grades.contains(s)) { gradeList.add(s); }
+        }
+        return gradeList;
+    }
+
+    private void setupBoulderViews() {
+        // Figure out which grades this wall has and only show buttons for those grades
+        allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
+        List<String> currentGrades = getCurrentGrades(wall.getBoulders().keySet(), allGrades);
+        for (String s : currentGrades) {
+            int buttonIdx = allGrades.indexOf(s);
+            gradeButtonGroup.getChildAt(buttonIdx).setVisibility(View.VISIBLE);
+        }
+
+        if (wall.getBoulders().size() == 0) {
+            String message = "You don't have any boulders! Add some by clicking the plus button below.";
+            messageText.setText(message);
+            messageText.setVisibility(View.VISIBLE);
+        }
+
+        adapter.setItems(currentGrades, wall.getBoulders());
+        adapter.notifyDataSetChanged();
+    }
+
+    private void onClickSyncBoulders(View v) {
+        model.syncBoulders(wall.getId()).observe(getViewLifecycleOwner(), result -> {
+            if (result == null) { return; }
+            if (result == SharedViewModel.Status.SUCCESS) {
+                //this.wall = model.getWall(wall.getId());
+                setupBoulderViews();
+                onClickGradeButton(fragmentModel.getGrade(), fragmentModel.getBoulderIdx());
             }
         });
     }

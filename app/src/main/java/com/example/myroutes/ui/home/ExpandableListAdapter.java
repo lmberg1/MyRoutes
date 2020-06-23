@@ -27,7 +27,8 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter {
         this.expandableListDetail = expandableListDetail;
     }
 
-    public void setItems(HashMap<String, List<BoulderItem>> expandableListDetail) {
+    public void setItems(List<String> expandableListTitle, HashMap<String, List<BoulderItem>> expandableListDetail) {
+        this.expandableListTitle = expandableListTitle;
         this.expandableListDetail = expandableListDetail;
         notifyDataSetChanged();
     }

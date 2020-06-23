@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -57,10 +58,10 @@ public class StartWorkoutFragment extends Fragment {
     private Matrix matrix;
 
     // Views
+    private LinearLayout progressView;
     private LinearLayout dropdownLayout;
     private ImageButton dropdownButton;
     private TextView boulderName;
-    private TextView instruction;
     private ImageView imageView;
     private Button nextButton;
     private Button continueButton;
@@ -75,7 +76,6 @@ public class StartWorkoutFragment extends Fragment {
 
     // Workout data
     private WorkoutItem workoutItem;
-    private List<Integer> groupIndices;
     private List<List<BoulderItem>> boulderSets;
     private int nBoulders;
     private int currentShowingSetIdx;
@@ -107,29 +107,11 @@ public class StartWorkoutFragment extends Fragment {
         if (this.workoutItem == null) {
             return;
         }
-        else {
-            // TODO: make more efficient
-            // Get boulderItems from the boulder_ids in the workoutItem
-            boulderSets = new ArrayList<>();
-            groupIndices = new ArrayList<>();
-            List<List<String>> boulderSetList = workoutItem.getWorkoutSets();
-            int nSets = boulderSetList.size();
-            for (int i = 0; i < nSets; i++) {
-                List<String> boulderIds = boulderSetList.get(i);
-                List<BoulderItem> boulderItems = new ArrayList<>();
-                for (String boulder_id : boulderIds) {
-                    BoulderItem b = wall.searchBoulderId(boulder_id);
-                    if (b != null) {
-                        groupIndices.add(i);
-                        boulderItems.add(b);
-                    }
-                }
-                if (!boulderItems.isEmpty()) { boulderSets.add(boulderItems); }
-            }
-            // Setup the view
-            nBoulders = groupIndices.size();
-            setupView(view);
-        }
+        // Get boulderItems from the boulder_ids in the workoutItem
+        boulderSets = wall.workoutToBoulders(workoutItem);
+        // Setup the view
+        nBoulders = workoutItem.getBoulderCount();
+        setupView(view);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -144,14 +126,17 @@ public class StartWorkoutFragment extends Fragment {
 
         // Get views
         TextView wallName = view.findViewById(R.id.wallName);
-        wallName.setText(workoutItem.getWorkout_name());
+        progressView = view.findViewById(R.id.progressView);
         imageView = view.findViewById(R.id.imageView2);
         boulderName = view.findViewById(R.id.boulderName);
-        instruction = view.findViewById(R.id.instruction);
         dropdownButton = view.findViewById(R.id.dropdownButton);
         dropdownLayout = view.findViewById(R.id.dropdownLayout);
         nextButton = view.findViewById(R.id.nextButton);
         continueButton = view.findViewById(R.id.continueButton);
+
+        // Set text views
+        wallName.setText(workoutItem.getWorkout_name());
+        boulderName.setText(String.format(Locale.US, "%d Total Sets", boulderSets.size()));
 
         // Set up recycler view
         recyclerView = view.findViewById(R.id.recyclerView);
@@ -165,7 +150,6 @@ public class StartWorkoutFragment extends Fragment {
         listView = view.findViewById(R.id.expandableListView);
         listView.setVisibility(View.GONE);
         listView.setAdapter(adapter);
-        listView.setOnTouchListener(new VerticalSwipeListener());
         listView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
@@ -218,7 +202,7 @@ public class StartWorkoutFragment extends Fragment {
         recyclerView.setAdapter(progressAdapter);
 
         // Scale imgBitmap to fit on screen
-        int maxHeight = imageView.getMeasuredHeight();
+        int maxHeight = imageView.getMeasuredHeight() - progressView.getMinimumHeight();
         int maxWidth = imageView.getMeasuredWidth();
         matrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxHeight, maxWidth);
         imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, matrix);
@@ -259,12 +243,20 @@ public class StartWorkoutFragment extends Fragment {
     }
 
     private void setSetIdx(int setIdx, int boulderIdx) {
-        fragmentModel.setSetIdx(setIdx);
+        // Darken the text color of the current set
+        if ((boulderIdx == 0) && (setIdx < recyclerView.getChildCount())) {
+            TextView setProgressText = recyclerView.getChildAt(setIdx).findViewById(R.id.setTitle);
+            setProgressText.setTextColor(0xFF444444);
+        }
 
         // Workout is done
-        if (setIdx == boulderSets.size()) { onFinishWorkout(); }
+        if (setIdx == boulderSets.size()) {
+            onFinishWorkout();
+            return;
+        }
         // Workout set is done
-        if (setIdx > 0) {
+        else if (setIdx > 0) {
+            fragmentModel.setSetIdx(setIdx);
             // Update view to tell user set if finished
             onFinishSet(setIdx);
             // Wait for user to click continue to move onto next set
@@ -276,30 +268,24 @@ public class StartWorkoutFragment extends Fragment {
     }
 
     private void onFinishSet(int setIdx) {
-        instruction.setText(String.format(Locale.US,"Set %d Complete", setIdx));
-        // Hide the dropdown views
-        boulderName.setText("");
-        dropdownButton.setVisibility(View.INVISIBLE);
+        boulderName.setText(String.format(Locale.US,"Set %d Complete", setIdx));
         // Replace next button with continue button
         nextButton.setVisibility(View.GONE);
         continueButton.setVisibility(View.VISIBLE);
     }
 
     private void onContinueSet(int setIdx, int boulderIdx) {
-        instruction.setText(String.format(Locale.US,"%s", "Climb: "));
+        boulderName.setText(String.format(Locale.US,"%s", "Climb: "));
         // Show the dropdown views
         setBoulderIdx(setIdx, boulderIdx);
-        dropdownButton.setVisibility(View.VISIBLE);
         // Replace continue button with next button
         continueButton.setVisibility(View.GONE);
         nextButton.setVisibility(View.VISIBLE);
     }
 
     private void onFinishWorkout() {
-        instruction.setText(String.format(Locale.US,"%s", "Workout Complete!"));
+        boulderName.setText(String.format(Locale.US,"%s", "Workout Complete!"));
         // Hide the dropdown views
-        boulderName.setText("");
-        dropdownButton.setVisibility(View.GONE);
         nextButton.setVisibility(View.GONE);
     }
 
@@ -380,50 +366,10 @@ public class StartWorkoutFragment extends Fragment {
         }
 
         // Update expandable list view
-        adapter.updateCurrentBoulder(setIdx, boulderIdx);
-    }
-
-    private void goToPreviousBoulder() {
-        int setIdx = fragmentModel.getSetIdx();
-        int boulderIdx = fragmentModel.getBoulderIdx();
-
-        // Check if set index will change
-        if (boulderIdx == 0) {
-            int groupIdx = setIdx - 1;
-            if (groupIdx < 0) return;
-            int childIdx = adapter.getChildrenCount(groupIdx) - 1;
-            setSetIdx(groupIdx, childIdx);
-        }
-        else {
-            setBoulderIdx(setIdx, boulderIdx - 1);
+        if (setIdx < recyclerView.getChildCount()) {
+            adapter.updateCurrentBoulder(setIdx, boulderIdx);
         }
     }
 
     /*-----------------------------------------Listeners------------------------------------------*/
-
-    // Detects a vertical swipe to close expandable list view
-    private class VerticalSwipeListener implements View.OnTouchListener {
-        private float y1,y2;
-        static final int MIN_DISTANCE = 150;
-
-        @SuppressLint("ClickableViewAccessibility")
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            // Look for swipes of size at least MIN_DISTANCE
-            switch(event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    y1 = event.getY();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    y2 = event.getY();
-                    float deltaY = y1 - y2;
-                    if (deltaY > MIN_DISTANCE) {
-                        onClickDrowdown();
-                        return true;
-                    }
-                    break;
-            }
-            return false;
-        }
-    }
 }

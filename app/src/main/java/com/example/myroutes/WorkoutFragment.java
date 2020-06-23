@@ -1,6 +1,7 @@
 package com.example.myroutes;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,13 +9,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
@@ -40,19 +44,22 @@ public class WorkoutFragment extends Fragment {
     private SharedViewModel model;
     private WorkoutModel fragmentModel;
 
+    // Scrollable view
+    NestedScrollView scrollView;
+
     // Workout list variables
     private TextView createWorkoutTitle;
-    private ImageButton deleteWorkout;
+    private Button deleteWorkout;
     private EditText workoutName;
     private ListView workoutList;
     private WorkoutListAdapter workoutListAdapter;
     private List<WorkoutItem> workoutItems;
+    private List<List<List<BoulderItem>>> workoutListItems;
 
     // Expandable list view variables
     private ExpandableListView expandableListView;
     private WorkoutExpandableListAdapter setListAdapter;
     private List<List<BoulderItem>> expandableListData;
-    private List<WorkoutExpandableListAdapter.Mode> expandableListGroupMode;
 
     // Current wall variables
     private List<String> currentGrades;
@@ -134,12 +141,21 @@ public class WorkoutFragment extends Fragment {
             if (currentGradesSet.contains(s)) { currentGrades.add(s); }
         }
 
+        // Setup data for workout list
+        workoutListItems = new ArrayList<>();
+        for (WorkoutItem w : workoutItems) {
+            workoutListItems.add(wall.workoutToBoulders(w));
+        }
+
         // Setup list of workout
         workoutList = view.findViewById(R.id.workout_list);
-        workoutListAdapter = new WorkoutListAdapter(requireContext(), workoutItems);
+        workoutListAdapter = new WorkoutListAdapter(requireContext(), workoutItems, workoutListItems);
         workoutListAdapter.setOnStartWorkout(this::onClickStartWorkout);
         workoutListAdapter.setOnEditWorkout(this::onClickEditWorkout);
         workoutList.setAdapter(workoutListAdapter);
+        setListViewHeightBasedOnChildren(workoutList);
+
+        scrollView = view.findViewById(R.id.container);
 
         // Get views in the create workout dialog
         View dialog = view.findViewById(R.id.workout_dialog);
@@ -150,11 +166,11 @@ public class WorkoutFragment extends Fragment {
 
         // Initialize expandable list view data
         expandableListData = new ArrayList<>();
-        expandableListData.add(new ArrayList<>());
 
         // Setup expandable list view
-        setListAdapter = new WorkoutExpandableListAdapter(requireContext(), expandableListGroupMode, expandableListData, currentGrades);
+        setListAdapter = new WorkoutExpandableListAdapter(requireContext(), null, expandableListData, currentGrades);
         setListAdapter.setOnDropdownClick(this::toggleDropdown);
+        setListAdapter.setOnDeleteClick(this::onClickDeleteSet);
         expandableListView.setAdapter(setListAdapter);
         setListAdapter.setOnInputChangedListener((groupPosition, selectedNumber, selectedGrade) -> {
             edited = true;
@@ -179,18 +195,25 @@ public class WorkoutFragment extends Fragment {
 
     private void resetExpandableListData() {
         expandableListData.clear();
-        expandableListData.add(new ArrayList<BoulderItem>());
         setListAdapter.setItems(expandableListData);
         workoutName.getText().clear();
         workoutName.setError(null);
         createWorkoutTitle.setText(String.format("%s", "Add Workout"));
         deleteWorkout.setVisibility(View.GONE);
+        setListViewHeightBasedOnChildren(expandableListView);
     }
 
     private void onClickAddSet(View v) {
         // Mark previous set
-        expandableListData.add(new ArrayList<BoulderItem>());
+        expandableListData.add(new ArrayList<>());
         setListAdapter.notifyDataSetChanged();
+        setListViewHeightBasedOnChildren(expandableListView);
+    }
+
+    private void onClickDeleteSet(int listPosition) {
+        expandableListData.remove(listPosition);
+        setListAdapter.notifyDataSetChanged();
+        setListViewHeightBasedOnChildren(expandableListView);
     }
 
     private boolean toggleDropdown(ImageButton dropdown, int groupPosition) {
@@ -202,7 +225,7 @@ public class WorkoutFragment extends Fragment {
             expandableListView.expandGroup(groupPosition, true);
             dropdown.setImageResource(R.drawable.ic_baseline_expand_less_24);
         }
-
+        setListViewHeightBasedOnChildren(expandableListView);
         return false;
     }
 
@@ -218,16 +241,19 @@ public class WorkoutFragment extends Fragment {
     }
 
     private void onClickEditWorkout(int listPosition) {
+        this.workoutItem = workoutItems.get(listPosition);
         // Clear the current expandable list data
         expandableListData.clear();
-        // Update the expandable list data
-        this.workoutItem = workoutItems.get(listPosition);
-        expandableListData = idsToBoulders(wall, workoutItem.getWorkoutSets());
-        setListAdapter.setItems(expandableListData);
         // Update the create workout view
         workoutName.setText(workoutItem.getWorkout_name());
         createWorkoutTitle.setText(String.format("%s", "Edit Workout"));
         deleteWorkout.setVisibility(View.VISIBLE);
+        // Update the expandable list data
+        expandableListData = wall.workoutToBoulders(workoutItem);
+        setListAdapter.setItems(expandableListData);
+        setListViewHeightBasedOnChildren(expandableListView);
+        // Scroll to top
+        scrollView.fullScroll(ScrollView.FOCUS_UP);
     }
 
     private void onDeleteWorkout(View view) {
@@ -246,16 +272,16 @@ public class WorkoutFragment extends Fragment {
         delete.setOnClickListener(v -> {
             alertDialog.cancel();
             // Delete item
+            int index = workoutItems.indexOf(workoutItem);
             model.deleteWorkoutItem(workoutItem);
             // Clear edit workout dialog
             resetExpandableListData();
             // Remove item from workout list
-            workoutItems.remove(workoutItem);
-            workoutListAdapter.notifyDataSetChanged();
+            workoutListItems.remove(index);
+            workoutListAdapter.setItems(workoutItems, workoutListItems);
+            setListViewHeightBasedOnChildren(workoutList);
         });
     }
-
-    /*------------------------------Handle Creating New Workout-----------------------------------*/
 
     private void onClickSaveWorkout(View v) {
         // Make sure user can't click any buttons while saving
@@ -265,6 +291,8 @@ public class WorkoutFragment extends Fragment {
         v.setClickable(true);
         deleteWorkout.setClickable(true);
     }
+
+    /*------------------------------Handle Creating New Workout-----------------------------------*/
 
     private void saveWorkout() {
         // Handle errors
@@ -307,21 +335,27 @@ public class WorkoutFragment extends Fragment {
         WorkoutItem newWorkoutItem = new WorkoutItem(model.getStitchUserId(), wall.getId(), workout_id,
                 name, boulderIds);
 
+        Log.e(TAG, String.format("%d", boulderIds.size()));
+
         // Add workout item to repository
         model.addWorkoutItem(newWorkoutItem);
 
         // Update list view
         if (workoutItems.contains(workoutItem)) {
-            workoutItems.set(workoutItems.indexOf(workoutItem), newWorkoutItem);
+            int index = workoutItems.indexOf(workoutItem);
+            //workoutItems.set(index, newWorkoutItem);
+            workoutListItems.set(index, wall.workoutToBoulders(workoutItem));
             Toast.makeText(requireContext(), String.format("Updated Workout \"%s\"", name), Toast.LENGTH_SHORT).show();
         }
         else {
-            workoutItems.add(workoutItem);
+            this.workoutItem = newWorkoutItem;
+            //workoutItems.add(workoutItem);
+            workoutListItems.add(wall.workoutToBoulders(workoutItem));
             Toast.makeText(requireContext(), String.format("Saved Workout \"%s\"", name), Toast.LENGTH_SHORT).show();
         }
-        this.workoutItem = newWorkoutItem;
-        workoutListAdapter.notifyDataSetChanged();
-
+        Log.e(TAG, String.format("%d %d", workoutItems.size(), workoutListItems.size()));
+        //workoutListAdapter.setItems(workoutItems, workoutListItems);
+        setListViewHeightBasedOnChildren(workoutList);
     }
 
     /*-------------------------------------Helper Functions---------------------------------------*/
@@ -336,19 +370,6 @@ public class WorkoutFragment extends Fragment {
         return randomBoulders;
     }
 
-    private static List<List<BoulderItem>> idsToBoulders(Wall wall, List<List<String>> ids) {
-        List<List<BoulderItem>> boulders = new ArrayList<>();
-        for (List<String> setIds : ids) {
-            List<BoulderItem> setBoulders = new ArrayList<>();
-            for (String id : setIds) {
-                BoulderItem b = wall.searchBoulderId(id);
-                if (b != null) { setBoulders.add(b); }
-            }
-            if (!setBoulders.isEmpty()) { boulders.add(setBoulders); }
-        }
-        return boulders;
-    }
-
     private static List<List<String>> bouldersToIds(List<List<BoulderItem>> setBoulders) {
         List<List<String>> setBoulderIds = new ArrayList<>();
         for (List<BoulderItem> boulders : setBoulders) {
@@ -359,5 +380,34 @@ public class WorkoutFragment extends Fragment {
             setBoulderIds.add(ids);
         }
         return setBoulderIds;
+    }
+
+    public static void setListViewHeightBasedOnChildren(ListView listView) {
+        ListAdapter listAdapter = listView.getAdapter();
+        if (listAdapter == null) {
+            return;
+        }
+
+        // Measure height of each child
+        int totalHeight = 0;
+        for (int i = 0, len = listAdapter.getCount(); i < len; i++) {
+            View listItem = listAdapter.getView(i, null, listView);
+            listItem.measure(0, 0);
+            totalHeight += listItem.getMeasuredHeight();
+        }
+
+        // Set the list view height to exactly fit its children
+        ViewGroup.LayoutParams params = listView.getLayoutParams();
+        params.height = totalHeight
+                + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
+        listView.setLayoutParams(params);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        workoutList = null;
+        expandableListView = null;
+        workoutListItems = null;
     }
 }
