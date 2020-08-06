@@ -27,11 +27,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myroutes.R;
-import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.entities.Wall;
+import com.example.myroutes.SharedViewModel;
+import com.example.myroutes.Wall;
 import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.db.entities.WorkoutItem;
 import com.example.myroutes.util.WallDrawingHelper;
+import com.example.myroutes.util.WallDrawingView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,21 +48,14 @@ public class StartWorkoutFragment extends Fragment {
     // Wall data
     private Wall wall;
     private Bitmap imgBitmap;
-    private ArrayList<Path> paths;
-
-    // Drawing variables
-    private Bitmap drawingBitmap;
-    private Canvas canvas;
-    private Paint drawPaint;
-    private Paint canvasPaint;
-    private Matrix matrix;
+    //private List<Path> paths;
 
     // Views
     private LinearLayout progressView;
     private LinearLayout dropdownLayout;
     private ImageButton dropdownButton;
     private TextView boulderName;
-    private ImageView imageView;
+    private WallDrawingView imageView;
     private Button nextButton;
     private Button continueButton;
 
@@ -108,7 +102,6 @@ public class StartWorkoutFragment extends Fragment {
         }
         // Initialize wall variables
         this.boulderSets = wall.workoutToBoulders(workoutItem);
-        this.paths = wall.getPaths();
         this.imgBitmap = wall.getBitmap();
         this.nBoulders = workoutItem.getBoulderCount();
         // Set up the view
@@ -163,25 +156,23 @@ public class StartWorkoutFragment extends Fragment {
 
     private void setTransformation() {
         setupWorkoutProgressView();
-        
+
         // Scale imgBitmap to fit on screen
         int maxHeight = imageView.getMeasuredHeight() - progressView.getMinimumHeight();
         int maxWidth = imageView.getMeasuredWidth();
-        matrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxHeight, maxWidth);
-        imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, matrix);
 
-        // Update layout params to match image
-        ViewGroup.LayoutParams params = imageView.getLayoutParams();
-        params.width = imgBitmap.getWidth();
-        params.height = imgBitmap.getHeight();
-        listView.getLayoutParams().height = imgBitmap.getHeight() + progressView.getHeight();
+        // Initialize paths
+        List<Path> allPaths = wall.getPaths();
+        List<Path> holdPaths = new ArrayList<>();
+        for (Path p : allPaths) {
+            Path copy = new Path(p);
+            holdPaths.add(copy);
+        }
 
-        // Set drawing variables
-        drawingBitmap = imgBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        canvas = new Canvas(drawingBitmap);
-        drawPaint = WallDrawingHelper.getDrawPaint();
-        canvasPaint = WallDrawingHelper.getCanvasPaint();
-        imageView.setImageBitmap(drawingBitmap);
+        imageView.initialize(imgBitmap, holdPaths, wall.getPoints());
+        imageView.setSize(maxWidth, maxHeight);
+
+        listView.getLayoutParams().height = imgBitmap.getHeight() + progressView.getMinimumHeight();
 
         continueButton.setOnClickListener(v -> { onStartWorkout(); });
     }
@@ -198,6 +189,11 @@ public class StartWorkoutFragment extends Fragment {
             showBoulderIdx(groupPosition, childPosition);
             return true;
         });
+        // Expand all the group
+        int nGroups = adapter.getGroupCount();
+        for (int i = 0; i < nGroups; i++) {
+            listView.expandGroup(i);
+        }
     }
 
     // Toggle expandable list view dropdown
@@ -319,34 +315,14 @@ public class StartWorkoutFragment extends Fragment {
         currentShowingBoulderIdx = boulderIdx;
 
         // Clear previous drawn paths
-        canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
-        imageView.setImageBitmap(drawingBitmap);
+        imageView.clearPaths();
 
-        // Get the boulderItem
+        // Draw the boulderItem
         BoulderItem boulderItem = boulderSets.get(setIdx).get(boulderIdx);
-
-        // Get the paths of the holds associated with this route
-        ArrayList<Integer> holdIndices = boulderItem.getBoulder_holds();
-        ArrayList<Path> route = new ArrayList<>();
-        for (int holdIdx : holdIndices) {
-            route.add(paths.get(holdIdx));
-        }
-
-        // Draw the route
-        drawPaths(route);
+        imageView.drawBoulder(boulderItem);
     }
 
     /*-----------------------------------------Helpers--------------------------------------------*/
-
-    private void drawPaths(ArrayList<Path> paths) {
-        for (Path p : paths) {
-            Path transform = new Path(p);
-            transform.transform(matrix);
-            transform.close();
-            canvas.drawPath(transform, drawPaint);
-        }
-        imageView.setImageBitmap(drawingBitmap);
-    }
 
     private void goToNextBoulder() {
         int setIdx = fragmentModel.getSetIdx();
@@ -378,6 +354,5 @@ public class StartWorkoutFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         listView = null;
-        imgBitmap.recycle();
     }
 }

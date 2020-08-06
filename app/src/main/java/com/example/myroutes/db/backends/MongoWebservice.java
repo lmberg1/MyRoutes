@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myroutes.db.Result;
+import com.example.myroutes.db.dao.StringArrayConverter;
 import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.db.entities.WallDataItem;
 import com.example.myroutes.db.entities.WallImageItem;
@@ -37,7 +38,7 @@ import static com.example.myroutes.db.backends.MongoConverters.WALL_IMAGE_COLLEC
 import static com.example.myroutes.db.backends.MongoConverters.WALL_ITEMS_COLLECTION;
 import static com.example.myroutes.db.backends.MongoConverters.WORKOUT_COLLECTION;
 
-import static com.example.myroutes.db.SharedViewModel.Status;
+import static com.example.myroutes.SharedViewModel.Status;
 
 public class MongoWebservice {
     private static final String TAG = "MongoWebService";
@@ -81,6 +82,8 @@ public class MongoWebservice {
     public static LiveData<Result<RemoteInsertOneResult>> addImageToMongo(WallImageItem item) {
         assert item != null;
         String errorMsg = "Failed to add image for wall " + item.getWall_id();
+        Log.e(TAG, "adding image");
+        Log.e(TAG, String.format("%s %s", item.getUser_id(), item.getWall_id()));
         return new MongoHelper<RemoteInsertOneResult>()
                 .runMongoTask(wallImageCollection.insertOne(item), MongoTask.ADD, errorMsg);
     }
@@ -135,10 +138,18 @@ public class MongoWebservice {
         Bson filter = Filters.and(Filters.eq(MongoConverters.Fields.WALL_ID, item.getWall_id()),
                 Filters.eq(MongoConverters.Fields.BOULDER_ID, item.getBoulder_id()));
         BasicDBObject updateQuery = new BasicDBObject();
-        updateQuery.append("$set", new BasicDBObject()
-                .append(MongoConverters.Fields.BOULDER_NAME, item.getBoulder_name())
+        BasicDBObject updateItems = new BasicDBObject();
+        // Create document of possible updated items
+        updateItems.append(MongoConverters.Fields.BOULDER_NAME, item.getBoulder_name())
                 .append(MongoConverters.Fields.BOULDER_GRADE, item.getBoulder_grade())
-                .append(MongoConverters.Fields.BOULDER_HOLDS, item.holdsToBson()));
+                .append(MongoConverters.Fields.BOULDER_HOLDS, item.holdsToBson());
+        if (item.hasStart_holds()) {
+            updateItems.append(MongoConverters.Fields.START_HOLDS, item.intListToBson(item.getStart_holds()));
+        }
+        if (item.hasFinish_hold()) {
+            updateItems.append(MongoConverters.Fields.FINISH_HOLD, item.getFinish_hold());
+        }
+        updateQuery.append("$set", updateItems);
         return new MongoHelper<RemoteUpdateResult>()
                 .runMongoTask(boulderCollection.updateOne(filter, updateQuery), MongoTask.ADD, errorMsg);
     }

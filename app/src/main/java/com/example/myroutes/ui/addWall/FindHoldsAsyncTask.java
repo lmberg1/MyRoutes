@@ -19,27 +19,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-public class FindHoldsAsyncTask extends AsyncTask<Bitmap, Object, ArrayList<ArrayList<Point>>> {
+public class FindHoldsAsyncTask extends AsyncTask<Bitmap, Object, List<List<Point>>> {
     // The paths associated with the found points
-    private ArrayList<Path> paths;
+    private List<Path> paths;
     // Called when task is done finding holds
-    private BiConsumer<ArrayList<ArrayList<Point>>, ArrayList<Path>> onFinish;
+    private BiConsumer<List<List<Point>>, List<Path>> onFinish;
 
     private static int MIN_HOLD_SIZE = 40;
 
-    public FindHoldsAsyncTask(BiConsumer<ArrayList<ArrayList<Point>>, ArrayList<Path>> onFinish) {
+    public FindHoldsAsyncTask(BiConsumer<List<List<Point>>, List<Path>> onFinish) {
         this.onFinish = onFinish;
     }
 
     @Override
-    protected ArrayList<ArrayList<Point>> doInBackground(Bitmap... bitmaps) {
-        ArrayList<ArrayList<Point>> points = findHoldContours(bitmaps[0]);
+    protected List<List<Point>> doInBackground(Bitmap... bitmaps) {
+        List<List<Point>> points = findHoldContours(bitmaps[0]);
         this.paths = pathsFromPoints(points);
         return points;
     }
 
     @Override
-    protected void onPostExecute(ArrayList<ArrayList<Point>> points) {
+    protected void onPostExecute(List<List<Point>> points) {
         super.onPostExecute(points);
         onFinish.accept(points, paths);
     }
@@ -50,9 +50,9 @@ public class FindHoldsAsyncTask extends AsyncTask<Bitmap, Object, ArrayList<Arra
     }
 
     // Helper function to convert points to paths
-    private static ArrayList<Path> pathsFromPoints(ArrayList<ArrayList<Point>> points) {
-        ArrayList<Path> paths = new ArrayList<>();
-        for (ArrayList<Point> hold : points) {
+    private static List<Path> pathsFromPoints(List<List<Point>> points) {
+        List<Path> paths = new ArrayList<>();
+        for (List<Point> hold : points) {
             Path path = new Path();
             int n = hold.size();
             for (int i = 0; i < n; i++) {
@@ -67,7 +67,7 @@ public class FindHoldsAsyncTask extends AsyncTask<Bitmap, Object, ArrayList<Arra
     }
 
     // Try to find contours representing climbing holds
-    private static ArrayList<ArrayList<Point>> findHoldContours(Bitmap resizedBitmap) {
+    private static List<List<Point>> findHoldContours(Bitmap resizedBitmap) {
         // Get bitmap dimensions
         int h = resizedBitmap.getHeight();
         int w = resizedBitmap.getWidth();
@@ -122,7 +122,7 @@ public class FindHoldsAsyncTask extends AsyncTask<Bitmap, Object, ArrayList<Arra
         // Find convex hulls of contours to decrease noise
         // Save them as paths for drawing, and as a list of points for database
         MatOfInt hull = new MatOfInt();
-        ArrayList<ArrayList<Point>> points = new ArrayList<>();
+        List<List<Point>> points = new ArrayList<>();
         for (MatOfPoint c : contours) {
             // Get hull
             Imgproc.convexHull(c, hull);
@@ -133,7 +133,7 @@ public class FindHoldsAsyncTask extends AsyncTask<Bitmap, Object, ArrayList<Arra
 
             // Find actual points of hull
             List<Integer> contourIndices = hull.toList();
-            ArrayList<Point> hullPoints = new ArrayList<>();
+            List<Point> hullPoints = new ArrayList<>();
             for (int i : contourIndices) {
                 hullPoints.add(contourPoints.get(i));
             }

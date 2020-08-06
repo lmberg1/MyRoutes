@@ -23,8 +23,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.myroutes.R;
-import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.entities.Wall;
+import com.example.myroutes.SharedViewModel;
+import com.example.myroutes.Wall;
 import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.db.entities.WorkoutItem;
 import com.example.myroutes.util.AlertDialogManager;

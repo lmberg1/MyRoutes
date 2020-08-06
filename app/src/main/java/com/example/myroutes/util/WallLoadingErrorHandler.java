@@ -1,11 +1,10 @@
 package com.example.myroutes.util;
 
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.example.myroutes.db.SharedViewModel.Status;
+import com.example.myroutes.SharedViewModel.Status;
 
 import java.util.HashMap;
 

@@ -63,7 +63,6 @@ public class StartWorkoutExpandableListAdapter extends BaseExpandableListAdapter
             convertView.setBackgroundResource(R.drawable.gradebutton_selected);
         }
         else {
-            convertView.setBackgroundResource(0);
             convertView.setBackgroundColor(0xAFFFFFFF);
         }
 
@@ -112,6 +111,8 @@ public class StartWorkoutExpandableListAdapter extends BaseExpandableListAdapter
         TextView setTitle = convertView.findViewById(R.id.listTitle);
         String title = String.format(Locale.US, "Set %d", listPosition + 1);
         setTitle.setText(title);
+
+        convertView.setBackgroundColor(0xAFFFFFFF);
 
         return convertView;
     }

@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MongoConverters {
+    public static final String TAG = "MongoConverters";
+
+    // MongoDB info
     public static final String DATABASE = "myRoutesApp";
     public static final String BOULDER_ITEMS_COLLECTION = "boulder-data";
     public static final String WALL_ITEMS_COLLECTION = "wall-data";
@@ -45,6 +48,9 @@ public class MongoConverters {
         public static final String BOULDER_NAME = "boulder_name";
         public static final String BOULDER_GRADE = "boulder_grade";
         public static final String BOULDER_HOLDS = "boulder_holds";
+        public static final String START_HOLDS = "start_holds";
+        public static final String FINISH_HOLD = "finish_hold";
+
         // WorkoutItem fields
         public static final String WORKOUT_ID = "workout_id";
         public static final String WORKOUT_NAME = "name";
@@ -53,9 +59,9 @@ public class MongoConverters {
 
     /*--------------------------------Convert WallDataItem----------------------------------------*/
 
-    private static BsonArray contoursToBson(ArrayList<ArrayList<Point>> contourList) {
+    private static BsonArray contoursToBson(List<List<Point>> contourList) {
         BsonArray contours = new BsonArray();
-        for (ArrayList<Point> hull : contourList) {
+        for (List<Point> hull : contourList) {
             BsonArray points = new BsonArray();
             for (Point point : hull) {
                 BsonDocument o = new BsonDocument();
@@ -68,8 +74,8 @@ public class MongoConverters {
         return contours;
     }
 
-    private static ArrayList<ArrayList<Point>> bsonToContours(BsonArray contourArr) {
-        ArrayList<ArrayList<Point>> contourList = new ArrayList<>();
+    private static ArrayList<List<Point>> bsonToContours(BsonArray contourArr) {
+        ArrayList<List<Point>> contourList = new ArrayList<>();
         for (int i = 0; i < contourArr.size(); i++) {
             ArrayList<Point> hullList = new ArrayList<>();
             BsonArray hullArr = (BsonArray) contourArr.get(i);
@@ -174,26 +180,42 @@ public class MongoConverters {
         asDoc.put(Fields.BOULDER_NAME, new BsonString(item.getBoulder_name()));
         asDoc.put(Fields.BOULDER_GRADE, new BsonString(item.getBoulder_grade()));
         asDoc.put(Fields.BOULDER_HOLDS, item.holdsToBson());
+        // Check for optional fields
+        if (item.hasStart_holds()) {
+            asDoc.put(Fields.START_HOLDS, item.intListToBson(item.getStart_holds()));
+        }
+        if (item.hasFinish_hold()) {
+            asDoc.put(Fields.FINISH_HOLD, new BsonInt32(item.getFinish_hold()));
+        }
 
         return asDoc;
     }
 
-    static BoulderItem fromBsonDocument(final BsonDocument doc) {
-        // Get integer list
-        ArrayList<Integer> holdList = new ArrayList<>();
-        BsonArray holdArr = doc.getArray(Fields.BOULDER_HOLDS);
-        for (int i = 0; i < holdArr.size(); i++) {
-            holdList.add(((BsonInt32) holdArr.get(i)).getValue());
+    public static List<Integer> bsonArrayToList(BsonArray array) {
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < array.size(); i++) {
+            list.add(((BsonInt32) array.get(i)).getValue());
         }
+        return list;
+    }
 
-        return new BoulderItem(
+    static BoulderItem fromBsonDocument(final BsonDocument doc) {
+        BoulderItem boulderItem = new BoulderItem(
                 doc.getString(Fields.USER_ID).getValue(),
                 doc.getString(Fields.WALL_ID).getValue(),
                 doc.getString(Fields.BOULDER_ID).getValue(),
                 doc.getString(Fields.BOULDER_NAME).getValue(),
                 doc.getString(Fields.BOULDER_GRADE).getValue(),
-                holdList
+                bsonArrayToList(doc.getArray(Fields.BOULDER_HOLDS))
         );
+        // Check for optional fields
+        if (doc.containsKey(Fields.START_HOLDS)) {
+            boulderItem.setStart_holds(bsonArrayToList(doc.getArray(Fields.START_HOLDS)));
+        }
+        if (doc.containsKey(Fields.FINISH_HOLD)) {
+            boulderItem.setFinish_hold(doc.getInt32(Fields.FINISH_HOLD).getValue());
+        }
+        return boulderItem;
     }
 
     public static final Codec<BoulderItem> boulderItemCodec = new Codec<BoulderItem>() {

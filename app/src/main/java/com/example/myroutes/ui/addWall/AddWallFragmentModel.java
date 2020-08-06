@@ -4,19 +4,18 @@ import android.graphics.Bitmap;
 import android.graphics.Path;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class AddWallFragmentModel extends ViewModel {
 
     private Bitmap imgBitmap;
-    private ArrayList<Path> paths;
-    private ArrayList<ArrayList<Point>> points;
+    private List<Path> paths;
+    private List<List<Point>> points;
 
     public AddWallFragmentModel() {
         this.paths = new ArrayList<>();
@@ -31,23 +30,23 @@ public class AddWallFragmentModel extends ViewModel {
         return imgBitmap;
     }
 
-    public void setPaths(@NonNull ArrayList<Path> paths) {
+    public void setPaths(@NonNull List<Path> paths) {
         this.paths = paths;
     }
 
-    public ArrayList<Path> getPaths() {
+    public List<Path> getPaths() {
         return paths;
     }
 
-    public void setPoints(ArrayList<ArrayList<Point>> points) {
+    public void setPoints(List<List<Point>> points) {
         this.points = points;
     }
 
-    public ArrayList<ArrayList<Point>> getPoints() {
+    public List<List<Point>> getPoints() {
         return points;
     }
 
-    public void addPoints(ArrayList<Point> pointList) {
+    public void addPoints(List<Point> pointList) {
         this.points.add(pointList);
     }
 

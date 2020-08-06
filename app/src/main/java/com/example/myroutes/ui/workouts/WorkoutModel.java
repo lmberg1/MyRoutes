@@ -2,8 +2,6 @@ package com.example.myroutes.ui.workouts;
 
 import androidx.lifecycle.ViewModel;
 
-import com.example.myroutes.db.SharedViewModel;
-
 public class WorkoutModel extends ViewModel {
 
     private String workout_id;

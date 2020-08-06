@@ -6,7 +6,7 @@ import android.view.Menu;
 
 import org.opencv.android.OpenCVLoader;
 
-import com.example.myroutes.db.SharedViewModel;
+import com.example.myroutes.ui.addBoulder.AddBoulderModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomnavigation.LabelVisibilityMode;
 
@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     // View model
     private SharedViewModel model;
+    private AddBoulderModel addBoulderModel;
 
     // Bottom navigation controller
     private NavController navController;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize view model for handling wall data
         model = new ViewModelProvider(this).get(SharedViewModel.class);
+        //addBoulderModel = new ViewModelProvider(this).get(AddBoulderModel.class);
 
         // Initialize username if first time logging in
         String username = model.getUsername();
@@ -54,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             model.setUsername(username);
         }
 
-        username = "ccb33888";
+       // username = "ccb33888";
 
         // Try to log user in with their username
         model.setStitchUser(username).observe(this, user -> {
@@ -73,17 +75,12 @@ public class MainActivity extends AppCompatActivity {
     private void setupNavigation(BottomNavigationView navigationView) {
         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         /*navigationView.setOnNavigationItemSelectedListener(item -> {
-            currentFragmentId.setValue(item.getItemId());
             switch (item.getItemId()) {
-                case R.id.nav_home:
-                    navController.navigate(R.id.nav_home);
-                    return true;
                 case R.id.nav_addBoulder:
-                    Log.e(TAG, item.getTitle().toString());
+                    Log.e(TAG, "add Boulder");
+                    addBoulderModel.setBoulder(null);
+                    addBoulderModel.clearHighlightedHolds();
                     navController.navigate(R.id.nav_addBoulder);
-                    return true;
-                case R.id.nav_manage_walls:
-                    navController.navigate(R.id.nav_manage_walls);
                     return true;
             }
             return false;

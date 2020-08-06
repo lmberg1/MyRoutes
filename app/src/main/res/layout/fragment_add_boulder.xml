@@ -50,9 +50,9 @@
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/colorPrimary"
-        android:gravity="center_horizontal|center_vertical"
+        android:gravity="center_vertical"
         android:paddingStart="0dp"
-        android:paddingEnd="16dp"
+        android:paddingEnd="12dp"
         android:transitionName="bottomAppBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -63,7 +63,7 @@
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableStart="@drawable/ic_clear_black_24dp"
+            android:drawableStart="@drawable/ic_baseline_clear_24"
             android:drawableTint="@color/colorAccent"
             android:text="Clear Holds"
             android:textAllCaps="false"
@@ -100,6 +100,55 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="170dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/transparent_dropdown_background"
+        android:orientation="vertical"
+        android:transitionName="bottomAppBar"
+        android:translationZ="1dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bottomAppBar">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/dropdownButton"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="30dp"
+                android:layout_height="40dp"
+                android:padding="0dp"
+                android:tint="@android:color/tertiary_text_light"
+                android:translationZ="1dp"
+                app:srcCompat="@drawable/ic_baseline_expand_less_24" />
+
+            <Button
+                android:id="@+id/selectFinishHold"
+                style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="Select Finish Hold"
+                android:textAllCaps="false"
+                android:textColor="@android:color/tertiary_text_light"
+                android:textSize="12sp" />
+        </FrameLayout>
+
+        <Button
+            android:id="@+id/selectStartHolds"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="Select Start Holds"
+            android:textAllCaps="false"
+            android:textColor="@android:color/tertiary_text_light"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:foregroundGravity="center_horizontal"
@@ -110,11 +159,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/bottomAppBar">
 
-        <ImageView
+        <com.example.myroutes.util.WallDrawingView
             android:id="@id/imageView2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:adjustViewBounds="true"
             android:scaleType="fitStart"
             android:transitionName="wallImage" />
 
@@ -123,12 +171,13 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_gravity="center"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="5dp"
+            android:layout_marginEnd="16dp"
             android:layout_weight="1"
             android:gravity="center_horizontal|top"
             android:minHeight="30dp"
-            android:orientation="horizontal"
-            android:text="Tap on holds to add them to a boulder">
+            android:orientation="horizontal">
 
         </TextView>
     </LinearLayout>

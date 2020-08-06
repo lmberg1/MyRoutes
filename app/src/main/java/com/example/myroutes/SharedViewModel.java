@@ -1,6 +1,7 @@
-package com.example.myroutes.db;
+package com.example.myroutes;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -8,9 +9,11 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.myroutes.db.Result;
+import com.example.myroutes.db.SharedPreferencesModel;
+import com.example.myroutes.db.WallDataRepository;
 import com.example.myroutes.db.backends.FileService;
 import com.example.myroutes.db.entities.BoulderItem;
-import com.example.myroutes.db.entities.Wall;
 import com.example.myroutes.db.entities.WallDataItem;
 import com.example.myroutes.db.entities.WallImageItem;
 import com.example.myroutes.db.entities.WorkoutItem;

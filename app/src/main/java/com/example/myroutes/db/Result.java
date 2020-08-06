@@ -1,6 +1,6 @@
 package com.example.myroutes.db;
 
-import com.example.myroutes.db.SharedViewModel.Status;
+import com.example.myroutes.SharedViewModel.Status;
 
 public class Result<T> {
     public T data;

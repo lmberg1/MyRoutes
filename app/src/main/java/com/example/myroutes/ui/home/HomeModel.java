@@ -2,7 +2,7 @@ package com.example.myroutes.ui.home;
 
 import androidx.lifecycle.ViewModel;
 
-import com.example.myroutes.db.SharedViewModel;
+import com.example.myroutes.SharedViewModel;
 
 public class HomeModel extends ViewModel {
 

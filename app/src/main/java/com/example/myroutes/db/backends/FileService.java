@@ -17,7 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
-import static com.example.myroutes.db.SharedViewModel.Status;
+import static com.example.myroutes.SharedViewModel.Status;
 
 public class FileService {
     private static final String TAG = "FileService";

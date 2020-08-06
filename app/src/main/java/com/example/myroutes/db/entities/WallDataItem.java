@@ -14,27 +14,28 @@ import com.example.myroutes.db.dao.PointArrayConverter;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity(tableName = "walldata_table")
 public class WallDataItem {
     @PrimaryKey
     @NonNull
     @ColumnInfo(name = "wall_id")
-    private final String wall_id;
+    private String wall_id;
 
-    private final String user_id;
+    private String user_id;
     private String wall_name;
 
     @TypeConverters({PointArrayConverter.class})
-    private ArrayList<ArrayList<Point>> contours;
+    private List<List<Point>> contours;
     @Ignore
-    private ArrayList<Path> paths;
+    private List<Path> paths;
 
     public WallDataItem (
             final String user_id,
             final String wall_id,
             final String wall_name,
-            final ArrayList<ArrayList<Point>> contours) {
+            final List<List<Point>> contours) {
         this.user_id = user_id;
         this.wall_id = wall_id;
         this.wall_name = wall_name;
@@ -56,18 +57,35 @@ public class WallDataItem {
 
     public void setWall_name(String name) { this.wall_name = name; }
 
-    public ArrayList<ArrayList<Point>> getContours() { return contours; }
-
-    public ArrayList<Path> getPaths() {
-        if (paths == null) {
-            paths = pathsFromPoints(getContours());
+    public List<List<Point>> getContours() {
+        // Return defensive copy of points
+        List<List<Point>> copy = new ArrayList<>();
+        for (List<Point> list : contours) {
+            List<Point> listCopy = new ArrayList<>();
+            for (Point p : list) {
+                listCopy.add(new Point(p.x, p.y));
+            }
+            copy.add(listCopy);
         }
-        return paths;
+        return copy;
     }
 
-    private static ArrayList<Path> pathsFromPoints(ArrayList<ArrayList<Point>> points) {
+    public List<Path> getPaths() {
+        if (paths == null) {
+            paths = pathsFromPoints(contours);
+        }
+        // Return defensive copy of paths
+        List<Path> pathsCopy = new ArrayList<>();
+        for (Path p : paths) {
+            Path copy = new Path(p);
+            pathsCopy.add(copy);
+        }
+        return pathsCopy;
+    }
+
+    private static ArrayList<Path> pathsFromPoints(List<List<Point>> points) {
         ArrayList<Path> paths = new ArrayList<>();
-        for (ArrayList<Point> hold : points) {
+        for (List<Point> hold : points) {
             Path path = new Path();
             int n = hold.size();
             for (int i = 0; i < n; i++) {

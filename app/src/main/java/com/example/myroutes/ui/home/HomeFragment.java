@@ -2,19 +2,14 @@ package com.example.myroutes.ui.home;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
@@ -28,10 +23,10 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.R;
-import com.example.myroutes.db.SharedViewModel;
-import com.example.myroutes.db.entities.Wall;
+import com.example.myroutes.SharedViewModel;
+import com.example.myroutes.Wall;
 import com.example.myroutes.ui.addBoulder.AddBoulderModel;
-import com.example.myroutes.util.WallDrawingHelper;
+import com.example.myroutes.util.WallDrawingView;
 import com.example.myroutes.util.WallLoadingErrorHandler;
 
 import java.util.ArrayList;
@@ -51,24 +46,26 @@ public class HomeFragment extends Fragment {
     // Wall data
     private Wall wall;
     private Bitmap imgBitmap;
-    private ArrayList<Path> paths;
+    private List<Path> paths;
 
     // Drawing variables
-    private Bitmap drawingBitmap;
+    /*private Bitmap drawingBitmap;
     private Canvas canvas;
     private Paint drawPaint;
     private Paint canvasPaint;
     private Matrix matrix;
+    private float matrixScale;*/
 
     // Views
     private ImageButton editBoulder;
     private ImageButton dropdownButton;
     private TextView boulderName;
     private LinearLayout toggleButtonLayout;
-    private ImageView imageView;
+    private WallDrawingView imageView;
 
     // Grade button variables
     private List<String> allGrades;
+    private List<String> currentGrades;
     private RadioGroup gradeButtonGroup;
 
     // List variables
@@ -102,7 +99,7 @@ public class HomeFragment extends Fragment {
 
         // Get models
         model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        fragmentModel = new ViewModelProvider(this).get(HomeModel.class);
+        fragmentModel = new ViewModelProvider(requireActivity()).get(HomeModel.class);
         addBoulderModel = new ViewModelProvider(requireActivity()).get(AddBoulderModel.class);
 
         // Check for changes in the current wall
@@ -173,33 +170,46 @@ public class HomeFragment extends Fragment {
     }
 
     private void setTransformation() {
+        //if (matrix != null) return;
         // Scale imgBitmap to fit on screen
         int maxHeight = imageView.getMeasuredHeight() - toggleButtonLayout.getMinimumHeight();
         int maxWidth = imageView.getMeasuredWidth();
-        matrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxHeight, maxWidth);
-        imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, matrix);
 
-        // Update layout params to match image
-        ViewGroup.LayoutParams params = imageView.getLayoutParams();
-        params.width = imgBitmap.getWidth();
-        params.height = imgBitmap.getHeight();
-        listView.getLayoutParams().height = imgBitmap.getHeight() + toggleButtonLayout.getHeight();
+        imageView.initialize(imgBitmap, wall.getPaths(), wall.getPoints());
+        imageView.setSize(maxWidth, maxHeight);
 
-        // Set drawing variables
-        drawingBitmap = imgBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        canvas = new Canvas(drawingBitmap);
-        drawPaint = WallDrawingHelper.getDrawPaint();
-        canvasPaint = WallDrawingHelper.getCanvasPaint();
-        imageView.setImageBitmap(drawingBitmap);
+        // TODO: set dynamic list height
+        int maxListViewHeight = imageView.getLayoutParams().height + toggleButtonLayout.getHeight();
+        listView.getLayoutParams().height = maxListViewHeight;
 
         // Select first boulder if it exists
+        // TODO: show boulder in model
         if (adapter.getGroupCount() > 0) {
-            BoulderItem first = (BoulderItem) adapter.getChild(0, 0);
-            onClickGradeButton(first.getBoulder_grade(), 0);
+            int groupIdx = getNextGradeIndex(allGrades, currentGrades, fragmentModel.getGrade());
+            int boulderIdx = (currentGrades.contains(fragmentModel.getGrade())) ? fragmentModel.getBoulderIdx() : 0;
+            boulderIdx = Math.min(boulderIdx, adapter.getChildrenCount(groupIdx) - 1);
+
+            BoulderItem first = (BoulderItem) adapter.getChild(groupIdx, boulderIdx);
+            onClickGradeButton(first.getBoulder_grade(), boulderIdx);
 
             // Allow editing of current boulder
             editBoulder.setVisibility(View.VISIBLE);
         }
+    }
+
+    private static int getNextGradeIndex(List<String> allGrades, List<String> currentGrades, String lastGrade) {
+        if (lastGrade == null) return 0;
+        // lastGrade still exists in the list of currentGrades
+        if (currentGrades.contains(lastGrade)) return currentGrades.indexOf(lastGrade);
+        // There are no grades smaller than lastGrade in the list of currentGrades,
+        // so return the first index of currentGrades
+        int gradeIdx = allGrades.indexOf(lastGrade);
+        if (gradeIdx < allGrades.indexOf(currentGrades.get(0))) return 0;
+        // Otherwise find the index of the next smallest grade to lastGrade
+        while (!currentGrades.contains(allGrades.get(gradeIdx))) {
+            gradeIdx--;
+        }
+        return currentGrades.indexOf(allGrades.get(gradeIdx));
     }
 
     /*---------------------------------Handle App Bar Buttons-------------------------------------*/
@@ -221,7 +231,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void onClickEditBoulder(View v) {
-        addBoulderModel.setBoulder(boulderItems.get(fragmentModel.getBoulderIdx()));
+        BoulderItem boulderItem = boulderItems.get(fragmentModel.getBoulderIdx());
+        addBoulderModel.setBoulder(new BoulderItem(boulderItem));
         goToAddBoulderFragment(v);
     }
 
@@ -243,10 +254,16 @@ public class HomeFragment extends Fragment {
         listView.setAdapter(adapter);
         listView.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
             // Show the boulder that was clicked
-            RadioButton b = (RadioButton) gradeButtonGroup.getChildAt(groupPosition);
+            int gradeButtonIdx = allGrades.indexOf((String) adapter.getGroup(groupPosition));
+            RadioButton b = (RadioButton) gradeButtonGroup.getChildAt(gradeButtonIdx);
             onClickGradeButton(b.getText().toString(), childPosition);
             return true;
         });
+        // Expand all of the groups
+        int nGroups = adapter.getGroupCount();
+        for (int i = 0; i < nGroups; i++) {
+            listView.expandGroup(i);
+        }
     }
 
     // Toggle expandable list view dropdown
@@ -266,7 +283,7 @@ public class HomeFragment extends Fragment {
     private void setupGradeButtons() {
         // Figure out which grades this wall has and only show buttons for those grades
         allGrades = Arrays.asList(SharedViewModel.BOULDER_GRADES);
-        List<String> currentGrades = getSortedWallGrades(wall.getBoulders().keySet());
+        currentGrades = getSortedWallGrades(wall.getBoulders().keySet());
         for (String s : currentGrades) {
             int buttonIdx = allGrades.indexOf(s);
             gradeButtonGroup.getChildAt(buttonIdx).setVisibility(View.VISIBLE);
@@ -292,8 +309,7 @@ public class HomeFragment extends Fragment {
         toggleButtonLayout.removeAllViews();
 
         // Clear previous drawn paths
-        canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
-        imageView.setImageBitmap(drawingBitmap);
+        imageView.clearPaths();
 
         // Get boulders of the selected grade
         boulderItems = wall.getBoulders().get(currentGrade);
@@ -341,8 +357,7 @@ public class HomeFragment extends Fragment {
 
     private void setBoulderIdx(int boulderIdx) {
         // Clear previous drawn paths
-        canvas.drawBitmap(imgBitmap, 0, 0, canvasPaint);
-        imageView.setImageBitmap(drawingBitmap);
+        imageView.clearPaths();
 
         // Select the current toggle button
         toggleRadioButton(toggleButtonLayout.findViewById(boulderIdx));
@@ -350,33 +365,22 @@ public class HomeFragment extends Fragment {
         // Update view model
         fragmentModel.setBoulderIdx(boulderIdx);
 
-        // Get the paths of the holds associated with this route
+        // Update display to show this boulder
         BoulderItem boulderItem = boulderItems.get(boulderIdx);
-        ArrayList<Integer> holdIndices = boulderItem.getBoulder_holds();
-        ArrayList<Path> route = new ArrayList<>();
-        for (int holdIdx : holdIndices) {
-            route.add(paths.get(holdIdx));
-        }
-
-        // Get name of this route
         String name = (boulderItem.getBoulder_name().isEmpty()) ? "Unnamed" : boulderItem.getBoulder_name();
         boulderName.setText(String.format("%s - %s", fragmentModel.getGrade(), name));
-
-        // Draw the route
-        drawPaths(route);
-    }
-
-    private void drawPaths(ArrayList<Path> paths) {
-        for (Path p : paths) {
-            Path transform = new Path(p);
-            transform.transform(matrix);
-            transform.close();
-            canvas.drawPath(transform, drawPaint);
-        }
-        imageView.setImageBitmap(drawingBitmap);
+        imageView.drawBoulder(boulderItem);
     }
 
     /*-----------------------------------Helper Functions-----------------------------------------*/
+
+    private static List<Path> indicesToPaths(List<Integer> indices, ArrayList<Path> allPaths) {
+        List<Path> paths = new ArrayList<>();
+        for (int holdIdx : indices) {
+            paths.add(allPaths.get(holdIdx));
+        }
+        return paths;
+    }
 
     private static List<String> getSortedWallGrades(Set<String> currentGradesSet) {
         // Get all of the grades that the current wall has in sorted order

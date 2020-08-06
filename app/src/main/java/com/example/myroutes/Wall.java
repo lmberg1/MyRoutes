@@ -1,4 +1,4 @@
-package com.example.myroutes.db.entities;
+package com.example.myroutes;
 
 import android.graphics.Bitmap;
 import android.graphics.Path;
@@ -7,6 +7,8 @@ import com.example.myroutes.db.entities.BoulderItem;
 import com.example.myroutes.db.entities.WallDataItem;
 import com.example.myroutes.db.entities.WallImageItem;
 import com.example.myroutes.db.entities.WorkoutItem;
+
+import org.opencv.core.Point;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,9 +39,11 @@ public class Wall {
         return data.getWall_name();
     }
 
-    public ArrayList<Path> getPaths() {
+    public List<Path> getPaths() {
         return data.getPaths();
     }
+
+    public List<List<Point>> getPoints() {return data.getContours(); }
 
     public Bitmap getBitmap() {
         return image.getBitmap();
@@ -77,7 +81,7 @@ public class Wall {
         String grade = item.getBoulder_grade();
         List<BoulderItem> boulderItems = boulders.get(grade);
         if (boulderItems == null) return;
-        boulderItems.remove(item);
+        boulderItems.remove(searchBoulderId(item.getBoulder_id()));
         if (boulderItems.size() == 0) {
             this.boulders.remove(grade);
         }

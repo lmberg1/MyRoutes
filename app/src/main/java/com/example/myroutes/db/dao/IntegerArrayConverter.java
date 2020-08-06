@@ -8,7 +8,7 @@ import java.util.List;
 
 public class IntegerArrayConverter {
     @TypeConverter
-    public static String toString(ArrayList<Integer> holds) {
+    public static String toString(List<Integer> holds) {
         StringBuilder s = new StringBuilder();
         for (Integer i : holds) {
             s.append(i.toString());
@@ -18,9 +18,9 @@ public class IntegerArrayConverter {
     }
 
     @TypeConverter
-    public static ArrayList<Integer> toArrayList(String s) {
+    public static List<Integer> toList(String s) {
         List<String> items = Arrays.asList(s.split("\\s*,\\s*"));
-        ArrayList<Integer> list = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
         for (String i : items) {
             list.add(Integer.parseInt(i));
         }

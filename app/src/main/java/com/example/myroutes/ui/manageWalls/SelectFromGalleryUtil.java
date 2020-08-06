@@ -23,10 +23,12 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 
 public class SelectFromGalleryUtil {
+    private static final String TAG = "SelectFromGalleryUtil";
     public static final int GALLERY_REQUEST_CODE = 1;
     public static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE
     };
+    private static final float MAX_IMAGE_DIM = 1920f;
     private WeakReference<Activity> activity;
 
     public SelectFromGalleryUtil(Activity activity) {
@@ -50,7 +52,7 @@ public class SelectFromGalleryUtil {
         // Sets the type as image/*. This ensures only components of type image are selected
         intent.setType("image/*");
         //We pass an extra array with the accepted mime types. This will ensure only components with these MIME types as targeted.
-        String[] mimeTypes = {"image/jpeg", "image/png"};
+        String[] mimeTypes = {"image/jpeg", "image/png", "image/jpg"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
 
         return intent;
@@ -59,18 +61,22 @@ public class SelectFromGalleryUtil {
     // Transform result of gallery picking to bitmap
     public Bitmap getBitmapFromIntent(Intent data) {
         Activity activityVal = this.activity.get();
-        if (activityVal == null) { return null; }
+        if ((activityVal == null) || (data == null)) { return null; }
         // data.getData returns the content URI for the selected Image
         Uri selectedImage = data.getData();
-        String imgDecodableString = getImagePath(selectedImage);
-        if ((selectedImage == null) || (imgDecodableString == null)) { return null; }
+        if (selectedImage == null) {
+            Log.e(TAG, "Selected image is null");
+            return null;
+        }
+
+        // Check if image was downloaded from google photos (not in internal storage)
+        String url = selectedImage.toString();
+        if (url.startsWith("content://com.google.android.apps.photos.content")) {
+            // TODO: try to get image metadata for a google photo
+        }
 
         // Decode image and its metadata
         try {
-            // Save image metadata for location and orientation
-            ExifInterface exif = new ExifInterface(imgDecodableString);
-            String orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-
             // Read in the image into a byte array
             InputStream iStream = activityVal.getContentResolver().openInputStream(selectedImage);
             Bitmap imgBitmap = BitmapFactory.decodeStream(iStream);
@@ -78,12 +84,24 @@ public class SelectFromGalleryUtil {
             int h = imgBitmap.getHeight();
             int w = imgBitmap.getWidth();
 
-            // Create matrix to scale and rotate bitmap if necessary
+            // Try to get image metadata
             Matrix matrix = new Matrix();
-            if (w > 1000) { matrix.postScale(1000f / w, 1000f / w); }
-            if (orientation != null) { rotateMatrix(matrix, Integer.parseInt(orientation));  }
+            String imgDecodableString = getImagePath(selectedImage, activityVal);
+            if (imgDecodableString != null) {
+                // Get the image metadata
+                ExifInterface exif = new ExifInterface(imgDecodableString);
+                String orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
 
+                // Create matrix to rotate bitmap if necessary
+                if (orientation != null) { rotateMatrix(matrix, Integer.parseInt(orientation));  }
+            }
+            // Update matrix to scale bitmap if necessary
+            if (w > MAX_IMAGE_DIM) {
+                float scale = MAX_IMAGE_DIM / w;
+                matrix.postScale(scale, scale);
+            }
             imgBitmap = Bitmap.createBitmap(imgBitmap, 0, 0, w, h, matrix, true);
+
             return imgBitmap;
         } catch (Exception e) {
             e.printStackTrace();
@@ -121,8 +139,7 @@ public class SelectFromGalleryUtil {
         }
     }
 
-    private String getImagePath(Uri selectedImage) {
-        Activity activityVal = this.activity.get();
+    private String getImagePath(Uri selectedImage, Activity activityVal) {
         if (activityVal == null) { return null; }
         String[] filePathColumn = { MediaStore.Images.Media.DATA };
         // Get the cursor

@@ -23,7 +23,7 @@ import com.mongodb.stitch.android.core.auth.StitchUser;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
-import com.example.myroutes.db.SharedViewModel.Status;
+import com.example.myroutes.SharedViewModel.Status;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteDeleteResult;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteInsertOneResult;
 import com.mongodb.stitch.core.services.mongodb.remote.RemoteUpdateResult;
@@ -39,7 +39,7 @@ public class WallDataRepository {
     // User id
     private String stitchUserId;
 
-    WallDataRepository(Application application) {
+    public WallDataRepository(Application application) {
         this.application = new WeakReference<>(application);
         WallDataRoomDatabase db = WallDataRoomDatabase.getDatabase(application);
         this.boulderDao = db.boulderDao();
@@ -47,12 +47,12 @@ public class WallDataRepository {
         this.workoutDao = db.workoutDao();
     }
 
-    String getStitchUserId() {
+    public String getStitchUserId() {
         assert stitchUserId != null;
         return stitchUserId;
     }
 
-    LiveData<Status> setStichUser(String username) {
+    public LiveData<Status> setStichUser(String username) {
         String appId = application.get().getString(R.string.stitch_app_id);
         LiveData<Result<StitchUser>> result = MongoWebservice.loginToMongo(username, appId);
         MediatorLiveData<Status> mediator = new MediatorLiveData<>();
@@ -75,7 +75,6 @@ public class WallDataRepository {
     /*-----------------------------------Handle Boulder Data -------------------------------------*/
 
     private void insertBouldersLocal(List<BoulderItem> boulderItems) {
-       Log.e(TAG, "inserting boulders");
         BoulderItem[] itemArray = new BoulderItem[boulderItems.size()];
         AsyncTask.execute(() -> boulderDao.insertAll(boulderItems.toArray(itemArray)));
     }
@@ -92,11 +91,11 @@ public class WallDataRepository {
         AsyncTask.execute(() -> boulderDao.deleteBoulder(boulder_id));
     }
 
-    LiveData<Result<List<BoulderItem>>> getMongoBoulders(String wall_id) {
+    public LiveData<Result<List<BoulderItem>>> getMongoBoulders(String wall_id) {
         return MongoWebservice.getBouldersFromMongo(wall_id);
     }
 
-    LiveData<Result<List<BoulderItem>>> getBoulders(String wall_id) {
+    public LiveData<Result<List<BoulderItem>>> getBoulders(String wall_id) {
         MediatorLiveData<Result<List<BoulderItem>>> result = new MediatorLiveData<>();
 
         // Try to get from local storage
@@ -120,7 +119,7 @@ public class WallDataRepository {
         return result;
     }
 
-    void refreshBoulders(String wall_id, MediatorLiveData<Result<List<BoulderItem>>> result) {
+    public void refreshBoulders(String wall_id, MediatorLiveData<Result<List<BoulderItem>>> result) {
         LiveData<Result<List<BoulderItem>>> boulders = MongoWebservice.getBouldersFromMongo(wall_id);
         result.addSource(boulders, o -> {
             if (o == null) return;
@@ -133,27 +132,27 @@ public class WallDataRepository {
         });
     }
 
-    LiveData<Result<RemoteInsertOneResult>> insertBoulder(BoulderItem item) {
+    public LiveData<Result<RemoteInsertOneResult>> insertBoulder(BoulderItem item) {
         insertBoulderLocal(item);
         return MongoWebservice.addBoulderToMongo(item);
     }
 
-    LiveData<Result<RemoteUpdateResult>> updateBoulder(BoulderItem item) {
+    public LiveData<Result<RemoteUpdateResult>> updateBoulder(BoulderItem item) {
         insertBoulderLocal(item);
         return MongoWebservice.editBoulderInMongo(item);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteAllBoulders(String wall_id) {
+    public LiveData<Result<RemoteDeleteResult>> deleteAllBoulders(String wall_id) {
         deleteBouldersLocal(wall_id);
         return MongoWebservice.deleteBouldersFromMongo(wall_id);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteBoulder(String wall_id, String boulder_id) {
+    public LiveData<Result<RemoteDeleteResult>> deleteBoulder(String wall_id, String boulder_id) {
         deleteBoulderLocal(boulder_id);
         return MongoWebservice.deleteBoulderFromMongo(wall_id, boulder_id);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteAllUserBoulders() {
+    public LiveData<Result<RemoteDeleteResult>> deleteAllUserBoulders() {
         return MongoWebservice.deleteAllUserBouldersFromMongo(stitchUserId);
     }
 
@@ -177,11 +176,11 @@ public class WallDataRepository {
         AsyncTask.execute(() -> workoutDao.deleteWorkout(workout_id));
     }
 
-    LiveData<Result<List<WorkoutItem>>> getMongoWorkouts(String wall_id) {
+    public LiveData<Result<List<WorkoutItem>>> getMongoWorkouts(String wall_id) {
         return MongoWebservice.getWorkoutsFromMongo(wall_id);
     }
 
-    LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {
+    public LiveData<Result<List<WorkoutItem>>> getWorkouts(String wall_id) {
         MediatorLiveData<Result<List<WorkoutItem>>> result = new MediatorLiveData<>();
 
         // Try to get from local storage
@@ -191,12 +190,10 @@ public class WallDataRepository {
             if (o == null) return;
             // If the workouts were found, return success
             if (o.size() != 0) {
-                Log.e(TAG, "fetching workouts");
                 result.setValue(new Result<>(o, Status.SUCCESS));
             }
             // Otherwise look for workouts in the mongo database
             else {
-                Log.e(TAG, "fetching mongo workouts");
                 refreshWorkouts(wall_id, result);
             }
             result.removeSource(workouts);
@@ -205,7 +202,7 @@ public class WallDataRepository {
         return result;
     }
 
-    void refreshWorkouts(String wall_id, MediatorLiveData<Result<List<WorkoutItem>>> result) {
+    public void refreshWorkouts(String wall_id, MediatorLiveData<Result<List<WorkoutItem>>> result) {
         LiveData<Result<List<WorkoutItem>>> workouts = MongoWebservice.getWorkoutsFromMongo(wall_id);
         result.addSource(workouts, o -> {
             if (o == null) return;
@@ -218,22 +215,22 @@ public class WallDataRepository {
         });
     }
 
-    LiveData<Result<RemoteInsertOneResult>> inserWorkout(WorkoutItem item) {
+    public LiveData<Result<RemoteInsertOneResult>> inserWorkout(WorkoutItem item) {
         insertWorkoutLocal(item);
         return MongoWebservice.addWorkoutToMongo(item);
     }
 
-    LiveData<Result<RemoteUpdateResult>> updateWorkout(WorkoutItem item) {
+    public LiveData<Result<RemoteUpdateResult>> updateWorkout(WorkoutItem item) {
         insertWorkoutLocal(item);
         return MongoWebservice.editWorkoutInMongo(item);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteAllWorkouts(String wall_id) {
+    public LiveData<Result<RemoteDeleteResult>> deleteAllWorkouts(String wall_id) {
         deleteWorkoutsLocal(wall_id);
         return MongoWebservice.deleteWorkoutsFromMongo(wall_id);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteWorkout(String wall_id, String workout_id) {
+    public LiveData<Result<RemoteDeleteResult>> deleteWorkout(String wall_id, String workout_id) {
         deleteWorkoutLocal(workout_id);
         return MongoWebservice.deleteWorkoutFromMongo(wall_id, workout_id);
     }
@@ -248,18 +245,16 @@ public class WallDataRepository {
         AsyncTask.execute(() -> wallDataDao.deleteWallData(wall_id));
     }
 
-    LiveData<Result<WallDataItem>> getWallData(String wall_id) {
+    public LiveData<Result<WallDataItem>> getWallData(String wall_id) {
         MediatorLiveData<Result<WallDataItem>> result = new MediatorLiveData<>();
         // Try to get from local storage
         LiveData<WallDataItem> wallData = wallDataDao.getWallData(wall_id);
         result.addSource(wallData, o -> {
             if (o != null) {
-                Log.e(TAG, "fetching wall");
                 result.setValue(new Result<>(o, Status.SUCCESS));
             }
             // Otherwise look for the boulder in the mongo database
             else {
-                Log.e(TAG, "fetching mongo wall");
                 refreshWallData(wall_id, result);
             }
             result.removeSource(wallData);
@@ -268,7 +263,7 @@ public class WallDataRepository {
         return result;
     }
 
-    void refreshWallData(String wall_id, MediatorLiveData<Result<WallDataItem>> result) {
+    public void refreshWallData(String wall_id, MediatorLiveData<Result<WallDataItem>> result) {
         LiveData<Result<WallDataItem>> mongoWallData = MongoWebservice.getDataFromMongo(wall_id);
         result.addSource(mongoWallData, o1 -> {
             if (o1 == null) return;
@@ -281,12 +276,12 @@ public class WallDataRepository {
         });
     }
 
-    LiveData<Result<RemoteInsertOneResult>> insertWallData(WallDataItem item) {
+    public LiveData<Result<RemoteInsertOneResult>> insertWallData(WallDataItem item) {
         insertWallLocal(item);
         return MongoWebservice.addDataToMongo(item);
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteWallData(String wall_id) {
+    public LiveData<Result<RemoteDeleteResult>> deleteWallData(String wall_id) {
         deleteWallLocal(wall_id);
         return MongoWebservice.deleteDataFromMongo(wall_id);
     }
@@ -294,12 +289,12 @@ public class WallDataRepository {
     /*--------------------------------------Handle Image Data -------------------------------------*/
 
 
-    LiveData<Result<RemoteInsertOneResult>> insertImageData(WallImageItem item) {
+    public LiveData<Result<RemoteInsertOneResult>> insertImageData(WallImageItem item) {
         FileService.writeImageToDevice(item, application.get());
         return MongoWebservice.addImageToMongo(item);
     }
 
-    LiveData<Result<WallImageItem>> getImageData(String wall_id) {
+    public LiveData<Result<WallImageItem>> getImageData(String wall_id) {
         // Check device storage for image
         Application app = application.get();
         if (FileService.hasImageFile(wall_id, app)) {
@@ -318,7 +313,7 @@ public class WallDataRepository {
         return image;
     }
 
-    LiveData<Result<RemoteDeleteResult>> deleteImageData(String wall_id) {
+    public LiveData<Result<RemoteDeleteResult>> deleteImageData(String wall_id) {
         FileService.deleteImageFromDevice(wall_id, application.get());
         return MongoWebservice.deleteImageFromMongo(wall_id);
     }

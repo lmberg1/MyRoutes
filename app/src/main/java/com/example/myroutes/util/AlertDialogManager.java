@@ -11,7 +11,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 
 import com.example.myroutes.R;
-import com.example.myroutes.db.SharedViewModel;
+import com.example.myroutes.SharedViewModel;
 import com.example.myroutes.db.entities.BoulderItem;
 
 public class AlertDialogManager {

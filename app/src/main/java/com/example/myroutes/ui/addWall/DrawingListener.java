@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.myroutes.util.WallDrawingHelper;
+import com.example.myroutes.util.WallDrawingTouchImageView;
 import com.ortiz.touchview.TouchImageView;
 
 import org.opencv.core.Point;
@@ -34,25 +35,18 @@ public class DrawingListener implements View.OnTouchListener {
     Path drawPath = new Path();
     ArrayList<Point> pathPoints;
 
-    // Drawing variables
-    private Canvas drawCanvas;
-    private Bitmap canvasBitmap;
-    private Paint drawPaint = WallDrawingHelper.getDrawPaint();
-
     // Image view variables
-    private WeakReference<TouchImageView> imageViewWeakReference;
+    private WeakReference<WallDrawingTouchImageView> imageViewWeakReference;
     private int vw_width;
     private int vw_height;
 
     // Callback after user completes a path
     private BiConsumer<Path, ArrayList<Point>> drawCallback;
 
-    public DrawingListener(WeakReference<TouchImageView> imageView, Bitmap canvasBitmap, Canvas drawCanvas) {
+    public DrawingListener(WeakReference<WallDrawingTouchImageView> imageView) {
         this.imageViewWeakReference = imageView;
-        this.canvasBitmap = canvasBitmap;
-        this.drawCanvas = drawCanvas;
-        this.vw_width = canvasBitmap.getWidth();
-        this.vw_height = canvasBitmap.getHeight();
+        this.vw_width = imageViewWeakReference.get().getWidth();
+        this.vw_height = imageViewWeakReference.get().getHeight();
     }
 
     public void setDrawCallback(BiConsumer<Path, ArrayList<Point>> drawCallback) {
@@ -84,8 +78,7 @@ public class DrawingListener implements View.OnTouchListener {
                 // Draw path
                 drawPath.lineTo(point.x, point.y);
                 pathPoints.add(new Point(point.x, point.y));
-                drawCanvas.drawPath(drawPath, drawPaint);
-                imageView.setImageBitmap(canvasBitmap); // Update imageView
+                imageViewWeakReference.get().drawPath(drawPath);
                 break;
             // User stops drawing
             case MotionEvent.ACTION_UP:

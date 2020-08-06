@@ -129,10 +129,14 @@
 
         <com.example.myroutes.ui.addWall.MyFrameLayout
             android:id="@+id/frameLayout2"
+            android:foregroundGravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:scaleType="fitStart"
+            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <com.ortiz.touchview.TouchImageView
+            <com.example.myroutes.util.WallDrawingTouchImageView
                 android:id="@+id/imageView4"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

@@ -5,14 +5,15 @@ import androidx.room.TypeConverter;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class PointArrayConverter {
     @TypeConverter
-    public static String toString(ArrayList<ArrayList<Point>> points) {
+    public static String toString(List<List<Point>> points) {
         StringBuilder xList = new StringBuilder();
         StringBuilder yList = new StringBuilder();
-        for (ArrayList<Point> list : points) {
+        for (List<Point> list : points) {
             for (Point p : list) {
                 xList.append(String.format(Locale.US, "%d,", (int) p.x));
                 yList.append(String.format(Locale.US, "%d,", (int) p.y));
@@ -26,8 +27,8 @@ public class PointArrayConverter {
     }
 
     @TypeConverter
-    public static ArrayList<ArrayList<Point>> toArrayList(String s) {
-        ArrayList<ArrayList<Point>> points = new ArrayList<>();
+    public static List<List<Point>> toArrayList(String s) {
+        List<List<Point>> points = new ArrayList<>();
         // Check if empty
         String[] lists = s.split(":");
         if (lists.length == 0) { return points; }
@@ -37,7 +38,7 @@ public class PointArrayConverter {
         for (int i = 0; i < xLists.length; i++) {
             String[] xPoints = xLists[i].split(",");
             String[] yPoints = yLists[i].split(",");
-            ArrayList<Point> pList = new ArrayList<>();
+            List<Point> pList = new ArrayList<>();
             for (int j = 0; j < xPoints.length; j++) {
                 pList.add(new Point(Integer.parseInt(xPoints[j]),
                         Integer.parseInt(yPoints[j])));

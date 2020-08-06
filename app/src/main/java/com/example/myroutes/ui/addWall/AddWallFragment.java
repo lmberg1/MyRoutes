@@ -34,18 +34,22 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.myroutes.util.AlertDialogManager;
 import com.example.myroutes.R;
-import com.example.myroutes.db.SharedViewModel;
+import com.example.myroutes.SharedViewModel;
 import com.example.myroutes.db.entities.WallDataItem;
 import com.example.myroutes.util.WallDrawingHelper;
 import com.example.myroutes.db.entities.WallImageItem;
 import com.example.myroutes.ui.manageWalls.SelectFromGalleryUtil;
+import com.example.myroutes.util.WallDrawingTouchImageView;
 import com.ortiz.touchview.TouchImageView;
 
 import org.opencv.core.Point;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 import static com.example.myroutes.ui.manageWalls.SelectFromGalleryUtil.GALLERY_REQUEST_CODE;
 
@@ -59,17 +63,12 @@ public class AddWallFragment extends Fragment {
     // Helper class to select image from gallery
     private SelectFromGalleryUtil galleryUtil;
 
-    // Drawing variables
-    private int vw_width;
-    private int vw_height;
-    private Matrix matrix;
+    // Image variables
+    private WallDrawingTouchImageView imageView;
     private Bitmap imgBitmap;
-    private Bitmap drawingBitmap;
-    private Canvas canvas;
-    private Paint drawPaint;
+    private Region imageRegion;
 
     // Views
-    private TouchImageView imageView;
     private MyFrameLayout frameLayout;
     private LinearLayout loadingLayout;
     private LinearLayout containerView;
@@ -148,20 +147,13 @@ public class AddWallFragment extends Fragment {
         // Scale imgBitmap to fit on screen
         int maxWidth = containerView.getMeasuredWidth();
         int maxHeight = containerView.getMeasuredHeight() - helperText.getMinimumHeight();
-        matrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxHeight, maxWidth);
-        imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, matrix);
 
-        // Update layout params to match image
-        ViewGroup.LayoutParams params = frameLayout.getLayoutParams();
-        params.width = imgBitmap.getWidth();
-        params.height = imgBitmap.getHeight();
-        vw_width = params.width;
-        vw_height = params.height;
+        imageView.initialize(imgBitmap);
+        imgBitmap = imageView.setSize(maxWidth, maxHeight);
 
-        // Set drawing variables
-        drawingBitmap = imgBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        canvas = new Canvas(drawingBitmap);
-        drawPaint = WallDrawingHelper.getDrawPaint();
+        imageRegion = new Region(0, 0, imageView.getLayoutParams().width, imageView.getLayoutParams().height);
+        frameLayout.getLayoutParams().width = imageView.getLayoutParams().width;
+        frameLayout.getLayoutParams().height = imageView.getLayoutParams().height;
 
         // Check if paths have already been found
         if (fragmentModel.getPaths().size() != 0) {
@@ -179,7 +171,7 @@ public class AddWallFragment extends Fragment {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void onFindHoldsFinish(ArrayList<ArrayList<Point>> points, ArrayList<Path> paths) {
+    private void onFindHoldsFinish(List<List<Point>> points, List<Path> paths) {
         // Update fragment model
         fragmentModel.setPoints(points);
         fragmentModel.setPaths(paths);
@@ -187,7 +179,7 @@ public class AddWallFragment extends Fragment {
         loadingLayout.setVisibility(View.GONE);
         drawPaths();
         // Allow user to interact with image
-        DrawingListener drawingListener = new DrawingListener(new WeakReference<>(imageView), drawingBitmap, canvas);
+        DrawingListener drawingListener = new DrawingListener(new WeakReference<>(imageView));
         drawingListener.setDrawCallback(this::onDrawPathFinished);
         frameLayout.setOnTouchListener(drawingListener);
     }
@@ -276,8 +268,7 @@ public class AddWallFragment extends Fragment {
     private void addPath(Path p, ArrayList<Point> pathPoints) {
         // Make sure path is closed
         p.close();
-        canvas.drawPath(p, drawPaint);
-        imageView.setImageBitmap(drawingBitmap); // Update imageView
+        imageView.drawPath(p);
         // Need to create copy of path before saving
         Path copy = new Path(p);
         fragmentModel.addPath(copy);
@@ -288,16 +279,15 @@ public class AddWallFragment extends Fragment {
         // Create regions representing paths to test intersection
         Region region1 = new Region();
         Region region2 = new Region();
-        Region clip = new Region(0, 0, vw_width, vw_height);
-        region1.setPath(p, clip);
+        region1.setPath(p, imageRegion);
 
         // Remove any path that intersects with Path p
-        ArrayList<Path> paths = fragmentModel.getPaths();
-        ArrayList<ArrayList<Point>> points = fragmentModel.getPoints();
+        List<Path> paths = fragmentModel.getPaths();
+        List<List<Point>> points = fragmentModel.getPoints();
         int nPaths = paths.size();
         for (int i = nPaths - 1; i >= 0;  i--) {
             Path path = paths.get(i);
-            region2.setPath(path, clip);
+            region2.setPath(path, imageRegion);
             if (!region1.quickReject(region2)) {
                 paths.remove(i);
                 points.remove(i);
@@ -307,16 +297,12 @@ public class AddWallFragment extends Fragment {
         fragmentModel.setPoints(points);
 
         // Redraw canvas with new paths
-        canvas.drawBitmap(imgBitmap, 0, 0, new Paint(Paint.DITHER_FLAG));
         drawPaths();
     }
 
     private void drawPaths() {
-        ArrayList<Path> paths = fragmentModel.getPaths();
-        for (Path p : paths) {
-            canvas.drawPath(p, drawPaint);
-        }
-        imageView.setImageBitmap(drawingBitmap);
+        imageView.clearPaths();
+        imageView.drawAllPaths(fragmentModel.getPaths());
     }
 
     /*-----------------------------------Handle Saving Wall---------------------------------------*/
@@ -344,6 +330,9 @@ public class AddWallFragment extends Fragment {
             // Cancel the dialog
             alertDialog.cancel();
 
+            // Resize image and points to store in DB
+            resizeDataforDB();
+
             // Create new objects to add to database
             String wallName = wallNameEditText.getText().toString();
             String wall_id = UUID.randomUUID().toString().substring(0, 6);
@@ -360,6 +349,26 @@ public class AddWallFragment extends Fragment {
                 }
             });
         });
+    }
+
+    private void resizeDataforDB() {
+        int maxDim = 1000;
+        int h = imgBitmap.getHeight();
+        int w = imgBitmap.getWidth();
+        // Scale imgBitmap down so that its maximum dimension is 1000 pixels
+        Matrix scalingMatrix = WallDrawingHelper.getScalingMatrix(imgBitmap, maxDim, maxDim);
+        imgBitmap = WallDrawingHelper.resizeBitmap(imgBitmap, scalingMatrix);
+
+        // Scale down the points in hold contours to match the scaled bitmap
+        List<List<Point>> points = fragmentModel.getPoints();
+        double scalingRatio = (w > h) ? (double) maxDim / w :  (double) maxDim / h;
+        for (List<Point> hold : points) {
+            for (Point p : hold) {
+                p.x *= scalingRatio;
+                p.y *= scalingRatio;
+            }
+        }
+        fragmentModel.setPoints(points);
     }
 
     private boolean checkForWallIdError(EditText editText) {
@@ -380,7 +389,6 @@ public class AddWallFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        drawingBitmap.recycle();
-        imgBitmap.recycle();
+        //drawingBitmap.recycle();
     }
 }
